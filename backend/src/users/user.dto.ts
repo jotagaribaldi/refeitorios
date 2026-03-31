@@ -34,6 +34,10 @@ export class CreateUserDto {
 
 export class UpdateUserDto {
   @IsOptional()
+  @IsUUID()
+  tenantId?: string;
+
+  @IsOptional()
   @IsString()
   name?: string;
 
@@ -49,6 +53,10 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   employeeCode?: string;
+
+  @IsOptional()
+  @IsEnum(UserRole)
+  role?: UserRole;
 
   @IsOptional()
   @IsArray()

@@ -77,6 +77,20 @@ export class UsersService {
       throw new ForbiddenException('Acesso negado');
     }
 
+    // Segurança: Gerente não pode dar permissão de ROOT para ninguém
+    if (currentUser.role === UserRole.GERENTE && dto.role && dto.role !== UserRole.FUNCIONARIO) {
+      if (dto.role === UserRole.GERENTE && user.id === currentUser.id) {
+         // OK: GERENTE editando a si mesmo mantém o perfil GERENTE
+      } else {
+         throw new ForbiddenException('Gerente só pode gerenciar perfis de funcionários');
+      }
+    }
+
+    // Segurança: Gerente não pode mudar a empresa do funcionário
+    if (currentUser.role === UserRole.GERENTE && dto.tenantId && dto.tenantId !== currentUser.tenantId) {
+       throw new ForbiddenException('Gerente não pode alterar a empresa do usuário');
+    }
+
     const { password, allowedRestaurantIds, ...rest } = dto as any;
     if (password) {
       (rest as any).passwordHash = await bcrypt.hash(password, 10);

@@ -9,9 +9,11 @@ export declare class CreateUserDto {
     allowedRestaurantIds?: string[];
 }
 export declare class UpdateUserDto {
+    tenantId?: string;
     name?: string;
     email?: string;
     password?: string;
     employeeCode?: string;
+    role?: UserRole;
     allowedRestaurantIds?: string[];
 }

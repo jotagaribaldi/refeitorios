@@ -30,7 +30,7 @@ __decorate([
     __metadata("design:type", String)
 ], MonthlyAllowance.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'tenant_id' }),
     __metadata("design:type", String)
 ], MonthlyAllowance.prototype, "tenantId", void 0);
 __decorate([
@@ -39,7 +39,7 @@ __decorate([
     __metadata("design:type", tenant_entity_1.Tenant)
 ], MonthlyAllowance.prototype, "tenant", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'user_id' }),
     __metadata("design:type", String)
 ], MonthlyAllowance.prototype, "userId", void 0);
 __decorate([

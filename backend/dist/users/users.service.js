@@ -113,6 +113,16 @@ let UsersService = class UsersService {
         if (currentUser.role === user_entity_1.UserRole.GERENTE && user.tenantId !== currentUser.tenantId) {
             throw new common_1.ForbiddenException('Acesso negado');
         }
+        if (currentUser.role === user_entity_1.UserRole.GERENTE && dto.role && dto.role !== user_entity_1.UserRole.FUNCIONARIO) {
+            if (dto.role === user_entity_1.UserRole.GERENTE && user.id === currentUser.id) {
+            }
+            else {
+                throw new common_1.ForbiddenException('Gerente só pode gerenciar perfis de funcionários');
+            }
+        }
+        if (currentUser.role === user_entity_1.UserRole.GERENTE && dto.tenantId && dto.tenantId !== currentUser.tenantId) {
+            throw new common_1.ForbiddenException('Gerente não pode alterar a empresa do usuário');
+        }
         const { password, allowedRestaurantIds, ...rest } = dto;
         if (password) {
             rest.passwordHash = await bcrypt.hash(password, 10);

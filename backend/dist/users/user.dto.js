@@ -56,13 +56,20 @@ __decorate([
     __metadata("design:type", Array)
 ], CreateUserDto.prototype, "allowedRestaurantIds", void 0);
 class UpdateUserDto {
+    tenantId;
     name;
     email;
     password;
     employeeCode;
+    role;
     allowedRestaurantIds;
 }
 exports.UpdateUserDto = UpdateUserDto;
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)(),
+    __metadata("design:type", String)
+], UpdateUserDto.prototype, "tenantId", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
@@ -84,6 +91,11 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateUserDto.prototype, "employeeCode", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(user_entity_1.UserRole),
+    __metadata("design:type", String)
+], UpdateUserDto.prototype, "role", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsArray)(),

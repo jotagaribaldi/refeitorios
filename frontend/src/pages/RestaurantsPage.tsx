@@ -54,10 +54,13 @@ export default function RestaurantsPage() {
     }
     setSaving(true);
     try {
+      const payload: any = { ...form };
+      if (!payload.tenantId) delete payload.tenantId;
+
       if (editing) {
         await api.put(`/restaurants/${editing.id}`, { name: form.name, location: form.location });
       } else {
-        await api.post('/restaurants', form);
+        await api.post('/restaurants', payload);
       }
       setShowModal(false);
       load();
