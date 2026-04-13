@@ -1,5 +1,6 @@
 import {
   Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Request, Query,
+  ForbiddenException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { UsersService } from './users.service';
@@ -22,6 +23,21 @@ export class UsersController {
   @Get(':id')
   @Roles(UserRole.ROOT, UserRole.GERENTE)
   findOne(@Param('id') id: string) { return this.service.findOne(id); }
+
+  // Retorna os dados do QR Code do funcionário (userId encodado)
+  // Acessível pelo próprio usuário, FISCAL e GERENTE do mesmo tenant
+  @Get(':id/qrcode')
+  async getUserQrCode(@Param('id') id: string, @Request() req: any) {
+    const caller = req.user;
+    // Qualquer usuário autenticado com o mesmo tenant pode buscar (self, FISCAL, GERENTE, ROOT)
+    if (caller.role !== UserRole.ROOT) {
+      const target = await this.service.findOne(id);
+      if (target.tenantId !== caller.tenantId && caller.id !== id) {
+        throw new ForbiddenException('Acesso negado');
+      }
+    }
+    return this.service.getUserQrData(id);
+  }
 
   @Post()
   @Roles(UserRole.ROOT, UserRole.GERENTE)

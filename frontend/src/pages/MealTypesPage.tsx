@@ -8,19 +8,19 @@ const DEFAULT_ICONS: Record<string, string> = {
 export default function MealTypesPage() {
   const [restaurants, setRestaurants] = useState<any[]>([]);
   const [selectedRestaurantId, setSelectedRestaurantId] = useState('');
-  
+
   const [mealTypes, setMealTypes] = useState<any[]>([]);
   const [windows, setWindows] = useState<any[]>([]);
-  
+
   const [showTypeModal, setShowTypeModal] = useState(false);
   const [newTypeName, setNewTypeName] = useState('');
-  
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
 
   const loadBase = () => {
-    Promise.all([api.get('/restaurants'), api.get('/meal-types')])
+    Promise.all([api.get('/api/restaurants'), api.get('/api/meal-types')])
       .then(([rest, types]) => {
         setRestaurants(rest.data);
         setMealTypes(types.data);
@@ -37,7 +37,7 @@ export default function MealTypesPage() {
       .then((wins) => {
         const wMap: Record<string, any> = {};
         wins.data.forEach((w: any) => { wMap[w.mealTypeId] = w; });
-        
+
         setWindows(mealTypes.map((t: any) => {
           const w = wMap[t.id];
           return {
@@ -64,7 +64,7 @@ export default function MealTypesPage() {
     const { mealTypeId, startTime, endTime, allowDuplicate, isActive } = windows[idx];
     setSaving(mealTypeId);
     try {
-      await api.put('/meal-types/time-windows', {
+      await api.put('/api/meal-types/time-windows', {
         mealTypeId,
         startTime,
         endTime,
@@ -96,7 +96,7 @@ export default function MealTypesPage() {
   const deleteType = async (id: string) => {
     if (!confirm('Excluir este tipo de refeição? Isso removerá horários vinculados em todos os refeitórios.')) return;
     try {
-      await api.delete(`/meal-types/${id}`);
+      await api.delete(`/api/meal-types/${id}`);
       loadBase();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Erro ao excluir');
@@ -123,8 +123,8 @@ export default function MealTypesPage() {
             <label style={{ display: 'block', fontSize: 12, color: 'var(--primary)', fontWeight: 600, marginBottom: 4 }}>
               SELECIONE O REFEITÓRIO PARA CONFIGURAR:
             </label>
-            <select 
-              value={selectedRestaurantId} 
+            <select
+              value={selectedRestaurantId}
               onChange={(e) => setSelectedRestaurantId(e.target.value)}
               style={{ padding: '8px 12px', fontSize: 16, fontWeight: 700, width: '100%', maxWidth: 400 }}
             >
@@ -165,9 +165,9 @@ export default function MealTypesPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-12">
-                     {isCustom && (
-                        <button className="btn btn-sm btn-danger-ghost" onClick={() => deleteType(w.mealTypeId)} title="Excluir este tipo permanentemente">🗑️</button>
-                     )}
+                    {isCustom && (
+                      <button className="btn btn-sm btn-danger-ghost" onClick={() => deleteType(w.mealTypeId)} title="Excluir este tipo permanentemente">🗑️</button>
+                    )}
                     <label className="flex items-center gap-8 switch-container" style={{ cursor: 'pointer' }}>
                       <input
                         type="checkbox"
@@ -227,10 +227,10 @@ export default function MealTypesPage() {
             </p>
             <div className="form-group">
               <label>Nome do Tipo *</label>
-              <input 
-                autoFocus 
-                value={newTypeName} 
-                onChange={(e) => setNewTypeName(e.target.value)} 
+              <input
+                autoFocus
+                value={newTypeName}
+                onChange={(e) => setNewTypeName(e.target.value)}
                 placeholder="Ex: Lanche da Madrugada"
               />
             </div>

@@ -11,6 +11,7 @@ export enum UserRole {
   ROOT = 'ROOT',
   GERENTE = 'GERENTE',
   FUNCIONARIO = 'FUNCIONARIO',
+  FISCAL = 'FISCAL',
 }
 
 @Entity('users')

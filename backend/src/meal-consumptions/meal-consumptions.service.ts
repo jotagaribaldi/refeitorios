@@ -86,8 +86,87 @@ export class MealConsumptionsService {
     // Retorna com relações para o app mobile montar a resposta
     return this.repo.findOne({
       where: { id: saved.id },
-      relations: ['restaurant', 'mealType'],
+      relations: ['restaurant', 'mealType', 'user'],
     });
+  }
+
+  // ─── REGISTRO VIA FISCAL (scan do crachá) ────────────────────────────
+  async registerByUserId(fiscalId: string, fiscalTenantId: string, targetUserId: string, notes?: string) {
+    // 1. Busca dados do funcionário escaneado
+    const targetUser = await this.usersService.findOne(targetUserId);
+    if (!targetUser) {
+      throw new BadRequestException('Funcionário não encontrado');
+    }
+
+    // 2. Verifica que o funcionário pertence ao mesmo tenant do FISCAL
+    if (targetUser.tenantId !== fiscalTenantId) {
+      throw new BadRequestException('Funcionário não pertence a esta empresa');
+    }
+
+    // 3. Determina o refeitório baseado nos permitidos do funcionário
+    // Obtém lista de restaurantes permitidos; se vazia, busca todos do tenant
+    const allowedIds = await this.usersService.getAllowedRestaurantIds(targetUserId);
+
+    // Obtém o horário atual e encontra qual restaurante tem janela aberta
+    const currentWindow = await this.mealTypesService.getCurrentMealWindowForTenant(fiscalTenantId, allowedIds);
+    if (!currentWindow) {
+      throw new BadRequestException('Nenhuma refeição disponível neste horário');
+    }
+
+    // 4. Verifica duplicidade no mesmo dia
+    if (!currentWindow.allowDuplicate) {
+      const today = new Date().toISOString().split('T')[0];
+      const duplicate = await this.repo.findOne({
+        where: {
+          userId: targetUserId,
+          mealTypeId: currentWindow.mealTypeId,
+          date: today,
+        },
+      });
+      if (duplicate) {
+        throw new BadRequestException(
+          `${targetUser.name} já consumiu ${currentWindow.mealType.name} hoje`,
+        );
+      }
+    }
+
+    // 5. Verifica e debita saldo mensal do funcionário
+    const now = new Date();
+    try {
+      await this.allowancesService.incrementConsumed(targetUserId, now.getFullYear(), now.getMonth() + 1);
+    } catch (err) {
+      if (err.message === 'Saldo esgotado') {
+        throw new BadRequestException(`Saldo mensal de ${targetUser.name} está esgotado`);
+      }
+      throw new BadRequestException('Saldo mensal não configurado. Contate o gerente.');
+    }
+
+    // 6. Registra consumo
+    const consumption = this.repo.create({
+      tenantId: fiscalTenantId,
+      userId: targetUserId,
+      restaurantId: currentWindow.restaurantId,
+      mealTypeId: currentWindow.mealTypeId,
+      consumedAt: now,
+      date: now.toISOString().split('T')[0],
+      notes,
+    });
+
+    const saved = await this.repo.save(consumption);
+    const result = await this.repo.findOne({
+      where: { id: saved.id },
+      relations: ['restaurant', 'mealType', 'user'],
+    });
+
+    return {
+      ...result,
+      employee: {
+        id: targetUser.id,
+        name: targetUser.name,
+        employeeCode: targetUser.employeeCode,
+      },
+      authorized: true,
+    };
   }
 
   // ─── LISTAGEM ─────────────────────────────────────────────────────────

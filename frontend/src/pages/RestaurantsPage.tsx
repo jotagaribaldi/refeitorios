@@ -20,7 +20,7 @@ export default function RestaurantsPage() {
 
   const load = () => {
     setLoading(true);
-    const promises: Promise<any>[] = [api.get('/restaurants')];
+    const promises: Promise<any>[] = [api.get('/api/restaurants')];
     if (isRoot) promises.push(api.get('/tenants'));
     Promise.all(promises)
       .then(([rRes, tRes]) => {
@@ -58,9 +58,9 @@ export default function RestaurantsPage() {
       if (!payload.tenantId) delete payload.tenantId;
 
       if (editing) {
-        await api.put(`/restaurants/${editing.id}`, { name: form.name, location: form.location });
+        await api.put(`/api/restaurants/${editing.id}`, { name: form.name, location: form.location });
       } else {
-        await api.post('/restaurants', payload);
+        await api.post('/api/restaurants', payload);
       }
       setShowModal(false);
       load();

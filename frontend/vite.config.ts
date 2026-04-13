@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/refeitorios/painel/',
+  base: '/refeitorios/',
   server: {
     port: 5173,
     host: true,
@@ -15,7 +15,7 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:3003',
         changeOrigin: true,
       },
     },

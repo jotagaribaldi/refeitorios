@@ -39,8 +39,8 @@ export class UsersService {
   async create(dto: CreateUserDto, currentUser: any) {
     // ROOT may specify tenantId; GERENTE always uses own tenantId
     if (currentUser.role === UserRole.GERENTE) {
-      if (dto.role !== UserRole.FUNCIONARIO) {
-        throw new ForbiddenException('Gerente só pode criar funcionários');
+      if (dto.role !== UserRole.FUNCIONARIO && dto.role !== UserRole.FISCAL) {
+        throw new ForbiddenException('Gerente só pode criar funcionários ou fiscais');
       }
       dto.tenantId = currentUser.tenantId;
     }
@@ -52,8 +52,8 @@ export class UsersService {
     const passwordHash = await bcrypt.hash(password, 10);
     const user = this.repo.create({ ...rest, passwordHash });
 
-    // Vincula refeitórios permitidos
-    if (allowedRestaurantIds?.length) {
+    // Vincula refeitórios permitidos (apenas para FUNCIONARIO)
+    if (allowedRestaurantIds?.length && dto.role === UserRole.FUNCIONARIO) {
       user.allowedRestaurants = await this.restaurantRepo.findBy({
         id: In(allowedRestaurantIds),
       });
@@ -77,12 +77,12 @@ export class UsersService {
       throw new ForbiddenException('Acesso negado');
     }
 
-    // Segurança: Gerente não pode dar permissão de ROOT para ninguém
-    if (currentUser.role === UserRole.GERENTE && dto.role && dto.role !== UserRole.FUNCIONARIO) {
-      if (dto.role === UserRole.GERENTE && user.id === currentUser.id) {
-         // OK: GERENTE editando a si mesmo mantém o perfil GERENTE
-      } else {
-         throw new ForbiddenException('Gerente só pode gerenciar perfis de funcionários');
+    // Segurança: Gerente não pode dar permissão de ROOT ou outro GERENTE para ninguém
+    if (currentUser.role === UserRole.GERENTE && dto.role) {
+      const allowedRoles = [UserRole.FUNCIONARIO, UserRole.FISCAL];
+      const isSelfGerente = user.id === currentUser.id && dto.role === UserRole.GERENTE;
+      if (!allowedRoles.includes(dto.role as UserRole) && !isSelfGerente) {
+        throw new ForbiddenException('Gerente só pode gerenciar perfis de funcionários e fiscais');
       }
     }
 
@@ -90,6 +90,7 @@ export class UsersService {
     if (currentUser.role === UserRole.GERENTE && dto.tenantId && dto.tenantId !== currentUser.tenantId) {
        throw new ForbiddenException('Gerente não pode alterar a empresa do usuário');
     }
+
 
     const { password, allowedRestaurantIds, ...rest } = dto as any;
     if (password) {
@@ -125,6 +126,23 @@ export class UsersService {
     if (!user) return [];
     if (!user.allowedRestaurants?.length) return []; // sem restrição = lista vazia = todos permitidos
     return user.allowedRestaurants.map((r) => r.id);
+  }
+
+  // Retorna os dados para gerar QR Code do funcionário
+  async getUserQrData(userId: string) {
+    const user = await this.repo.findOne({
+      where: { id: userId },
+      relations: ['tenant'],
+    });
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+    // O QR Code contém apenas o userId — o backend valida tudo na hora do scan
+    return {
+      userId: user.id,
+      qrContent: JSON.stringify({ userId: user.id }),
+      userName: user.name,
+      employeeCode: user.employeeCode,
+      tenantName: user.tenant?.name || '',
+    };
   }
 
   async seedRoot() {
