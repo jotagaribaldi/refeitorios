@@ -1,8 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { v4 as uuidv4 } from 'uuid';
-import * as QRCode from 'qrcode';
 import { Restaurant } from './restaurant.entity';
 import { CreateRestaurantDto, UpdateRestaurantDto } from './restaurant.dto';
 
@@ -30,16 +28,9 @@ export class RestaurantsService {
     return r;
   }
 
-  async findByQrToken(token: string) {
-    const r = await this.repo.findOne({ where: { qrCodeToken: token, isActive: true } });
-    if (!r) throw new NotFoundException('QR Code inválido');
-    return r;
-  }
-
   async create(dto: CreateRestaurantDto, tenantId: string) {
-    const token = uuidv4();
-    const { tenantId: _ignored, ...rest } = dto; // remove o tenantId do DTO, já passamos separado
-    const restaurant = this.repo.create({ ...rest, tenantId, qrCodeToken: token });
+    const { tenantId: _ignored, ...rest } = dto;
+    const restaurant = this.repo.create({ ...rest, tenantId });
     return this.repo.save(restaurant);
   }
 
@@ -47,24 +38,6 @@ export class RestaurantsService {
     const r = await this.findOne(id, tenantId);
     Object.assign(r, dto);
     return this.repo.save(r);
-  }
-
-  async regenerateQr(id: string, tenantId?: string) {
-    const r = await this.findOne(id, tenantId);
-    r.qrCodeToken = uuidv4();
-    await this.repo.save(r);
-    const qrDataUrl = await QRCode.toDataURL(
-      JSON.stringify({ restaurantId: r.id, token: r.qrCodeToken }),
-    );
-    return { qrCodeToken: r.qrCodeToken, qrDataUrl };
-  }
-
-  async getQrCode(id: string, tenantId?: string) {
-    const r = await this.findOne(id, tenantId);
-    const qrDataUrl = await QRCode.toDataURL(
-      JSON.stringify({ restaurantId: r.id, token: r.qrCodeToken }),
-    );
-    return { qrCodeToken: r.qrCodeToken, qrDataUrl };
   }
 
   async remove(id: string, tenantId?: string) {

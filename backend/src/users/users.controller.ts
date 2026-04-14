@@ -29,7 +29,6 @@ export class UsersController {
   @Get(':id/qrcode')
   async getUserQrCode(@Param('id') id: string, @Request() req: any) {
     const caller = req.user;
-    // Qualquer usuário autenticado com o mesmo tenant pode buscar (self, FISCAL, GERENTE, ROOT)
     if (caller.role !== UserRole.ROOT) {
       const target = await this.service.findOne(id);
       if (target.tenantId !== caller.tenantId && caller.id !== id) {
@@ -37,6 +36,19 @@ export class UsersController {
       }
     }
     return this.service.getUserQrData(id);
+  }
+
+  @Post(':id/regenerate-qr')
+  @Roles(UserRole.ROOT, UserRole.GERENTE)
+  async regenerateUserQr(@Param('id') id: string, @Request() req: any) {
+    const caller = req.user;
+    if (caller.role !== UserRole.ROOT) {
+      const target = await this.service.findOne(id);
+      if (target.tenantId !== caller.tenantId) {
+        throw new ForbiddenException('Acesso negado');
+      }
+    }
+    return this.service.regenerateUserQr(id);
   }
 
   @Post()

@@ -28,13 +28,6 @@ export class RestaurantsController {
     return this.service.findOne(id, tenantId);
   }
 
-  @Get(':id/qrcode')
-  @Roles(UserRole.ROOT, UserRole.GERENTE)
-  getQr(@Param('id') id: string, @Request() req: any) {
-    const tenantId = req.user.role === UserRole.ROOT ? undefined : req.user.tenantId;
-    return this.service.getQrCode(id, tenantId);
-  }
-
   @Post()
   @Roles(UserRole.ROOT, UserRole.GERENTE)
   create(@Body() dto: CreateRestaurantDto, @Request() req: any) {
@@ -57,13 +50,6 @@ export class RestaurantsController {
   update(@Param('id') id: string, @Body() dto: UpdateRestaurantDto, @Request() req: any) {
     const tenantId = req.user.role === UserRole.ROOT ? undefined : req.user.tenantId;
     return this.service.update(id, tenantId, dto);
-  }
-
-  @Post(':id/regenerate-qr')
-  @Roles(UserRole.ROOT, UserRole.GERENTE)
-  regenerateQr(@Param('id') id: string, @Request() req: any) {
-    const tenantId = req.user.role === UserRole.ROOT ? undefined : req.user.tenantId;
-    return this.service.regenerateQr(id, tenantId);
   }
 
   @Delete(':id')

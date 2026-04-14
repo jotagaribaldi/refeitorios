@@ -13,6 +13,9 @@ export default function UsersPage() {
   const [restaurants, setRestaurants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [qrUser, setQrUser] = useState<any>(null);
+  const [qrData, setQrData] = useState<any>(null);
   const [editing, setEditing] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -127,8 +130,25 @@ export default function UsersPage() {
 
   const deactivate = async (id: string) => {
     if (!confirm('Desativar este usuário?')) return;
-    await api.delete(`/api/users/${id}`);
+    await api.delete(`/users/${id}`);
     load();
+  };
+
+  const viewQr = async (u: any) => {
+    setQrUser(u);
+    try {
+      const { data } = await api.get(`/users/${u.id}/qrcode`);
+      setQrData(data);
+    } catch {
+      setQrData({ userName: u.name, employeeCode: u.employeeCode, qrDataUrl: null });
+    }
+    setShowQrModal(true);
+  };
+
+  const regenerateQr = async () => {
+    if (!confirm('Regenerar QR Code? O QR Code atual se tornará inválido.')) return;
+    const { data } = await api.post(`/users/${qrUser.id}/regenerate-qr`);
+    setQrData(data);
   };
 
   const roleBadge: Record<string, string> = {
@@ -188,6 +208,9 @@ export default function UsersPage() {
                   <td><span className={`badge ${u.isActive ? 'badge-green' : 'badge-red'}`}>{u.isActive ? 'Ativo' : 'Inativo'}</span></td>
                   <td>
                     <div className="flex gap-8">
+                      {(u.role === 'FUNCIONARIO' || u.role === 'FISCAL') && (
+                        <button className="btn btn-sm btn-secondary" onClick={() => viewQr(u)} title="QR Code">📲</button>
+                      )}
                       <button className="btn btn-sm btn-secondary" onClick={() => openEdit(u)}>✏️</button>
                       <button className="btn btn-sm btn-danger" onClick={() => deactivate(u.id)}>🗑️</button>
                     </div>
@@ -310,6 +333,50 @@ export default function UsersPage() {
               <button className="btn btn-primary" onClick={save} disabled={saving}>
                 {saving ? 'Salvando...' : '💾 Salvar'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showQrModal && qrData && (
+        <div className="modal-overlay" onClick={() => setShowQrModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center', maxWidth: 400 }}>
+            <div className="modal-header">
+              <h2 className="modal-title">QR Code — Impressão</h2>
+              <button className="modal-close" onClick={() => setShowQrModal(false)}>✕</button>
+            </div>
+
+            <div className="qr-container" style={{ margin: '20px auto' }}>
+              {qrData.qrDataUrl ? (
+                <>
+                  <img src={qrData.qrDataUrl} alt="QR Code" style={{ width: 220, height: 220 }} />
+                  <div style={{ marginTop: 16, fontSize: 13 }}>
+                    <p style={{ fontWeight: 600, margin: 0 }}>{qrData.userName}</p>
+                    <p style={{ color: '#666', margin: '4px 0 0' }}>
+                      {qrData.employeeCode ? `Cód: ${qrData.employeeCode}` : qrData.userId?.slice(0, 8)}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <p className="text-muted">QR Code não disponível. O usuário pode não ter sido criado como FUNCIONARIO ou FISCAL.</p>
+              )}
+            </div>
+
+            {qrData.qrDataUrl && (
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16, marginTop: 8 }}>
+                <p style={{ fontSize: 12, color: '#666', marginBottom: 12 }}>
+                  Imprima este QR Code e cole no crachá do funcionário
+                </p>
+              </div>
+            )}
+
+            <div className="modal-actions" style={{ justifyContent: 'center', gap: 12 }}>
+              {qrData.qrDataUrl && (
+                <button className="btn btn-danger" onClick={regenerateQr}>
+                  🔄 Regenerar
+                </button>
+              )}
+              <button className="btn btn-secondary" onClick={() => setShowQrModal(false)}>Fechar</button>
             </div>
           </div>
         </div>

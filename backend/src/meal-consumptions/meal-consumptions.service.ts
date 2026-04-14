@@ -22,25 +22,22 @@ export class MealConsumptionsService {
 
   // ─── REGISTRO DE CONSUMO (fluxo principal) ───────────────────────────
   async register(userId: string, tenantId: string, dto: RegisterConsumptionDto) {
-    // 1. Valida restaurante pelo token QR
-    const restaurant = await this.restaurantsService.findByQrToken(dto.qrCodeToken);
-    if (restaurant.tenantId !== tenantId) {
+    // 1. Valida funcionário pelo token QR
+    const user = await this.usersService.findByQrToken(dto.qrCodeToken);
+    if (user.id !== userId) {
+      throw new BadRequestException('QR Code não pertence a este usuário');
+    }
+    if (user.tenantId !== tenantId) {
       throw new BadRequestException('QR Code não pertence à sua empresa');
     }
 
-    // 2. Valida se o funcionário tem permissão para usar este refeitório
+    // 2. Obtém lista de refeitórios permitidos
     const allowedIds = await this.usersService.getAllowedRestaurantIds(userId);
-    // Lista vazia = sem restrição (acesso a todos os refeitórios do tenant)
-    if (allowedIds.length > 0 && !allowedIds.includes(restaurant.id)) {
-      throw new BadRequestException(
-        `Você não tem permissão para realizar refeições em "${restaurant.name}"`,
-      );
-    }
 
-    // 3. Verifica janela de horário atual (específica do refeitório)
-    const currentWindow = await this.mealTypesService.getCurrentMealWindow(restaurant.id);
+    // 3. Encontra janela de refeição disponível para o tenant
+    const currentWindow = await this.mealTypesService.getCurrentMealWindowForTenant(tenantId, allowedIds);
     if (!currentWindow) {
-      throw new BadRequestException('Nenhuma refeição disponível neste horário para este refeitório');
+      throw new BadRequestException('Nenhuma refeição disponível neste horário');
     }
 
     // 4. Verifica duplicidade no mesmo dia (se regra ativada)
@@ -75,7 +72,7 @@ export class MealConsumptionsService {
     const consumption = this.repo.create({
       tenantId,
       userId,
-      restaurantId: restaurant.id,
+      restaurantId: currentWindow.restaurantId,
       mealTypeId: currentWindow.mealTypeId,
       consumedAt: now,
       date: now.toISOString().split('T')[0],
@@ -91,11 +88,11 @@ export class MealConsumptionsService {
   }
 
   // ─── REGISTRO VIA FISCAL (scan do crachá) ────────────────────────────
-  async registerByUserId(fiscalId: string, fiscalTenantId: string, targetUserId: string, notes?: string) {
-    // 1. Busca dados do funcionário escaneado
-    const targetUser = await this.usersService.findOne(targetUserId);
+  async registerByFiscal(fiscalId: string, fiscalTenantId: string, targetUserId: string, notes?: string) {
+    // 1. Busca e valida o usuário pelo token QR
+    const targetUser = await this.usersService.findByQrTokenForFiscal(targetUserId);
     if (!targetUser) {
-      throw new BadRequestException('Funcionário não encontrado');
+      throw new BadRequestException('QR Code inválido ou usuário não encontrado');
     }
 
     // 2. Verifica que o funcionário pertence ao mesmo tenant do FISCAL

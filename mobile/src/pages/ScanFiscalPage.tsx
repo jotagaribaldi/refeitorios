@@ -2,9 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import api from '../services/api';
 
+interface ScanFiscalPageProps {
+  onBack: () => void;
+}
+
 type ResultState =
   | null
-  | { type: 'success'; mealName: string; restaurant: string; time: string }
+  | { type: 'success'; employeeName: string; mealName: string; restaurant: string; time: string }
   | { type: 'error'; message: string };
 
 const MEAL_META: Record<string, { icon: string }> = {
@@ -15,7 +19,7 @@ const MEAL_META: Record<string, { icon: string }> = {
   'lanche-noite': { icon: '🌃' },
 };
 
-export default function ScanPage({ onBack }: { onBack: () => void }) {
+export default function ScanFiscalPage({ onBack }: ScanFiscalPageProps) {
   const [result, setResult] = useState<ResultState>(null);
   const [scanning, setScanning] = useState(true);
   const [manualToken, setManualToken] = useState('');
@@ -70,16 +74,17 @@ export default function ScanPage({ onBack }: { onBack: () => void }) {
 
   const handleQrResult = async (raw: string) => {
     try {
-      let token = raw;
+      let userId = raw;
       try {
         const parsed = JSON.parse(raw);
-        token = parsed.token || raw;
+        userId = parsed.userId || raw;
       } catch {}
 
-      const { data } = await api.post('/consumptions', { qrCodeToken: token });
+      const { data } = await api.post('/consumptions/scan', { userId });
       if (mountedRef.current) {
         setResult({
           type: 'success',
+          employeeName: data.employee?.name || data.user?.name || 'Funcionário',
           mealName: data.mealType?.name || 'Refeição',
           restaurant: data.restaurant?.name || '',
           time: new Date(data.consumedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
@@ -119,8 +124,8 @@ export default function ScanPage({ onBack }: { onBack: () => void }) {
         >
           ← Voltar
         </button>
-        <h2 className="scan-title">Escanear QR Code</h2>
-        <p className="scan-subtitle">Aponte a câmera para o QR Code do seu crachá</p>
+        <h2 className="scan-title">Escanear Crachá</h2>
+        <p className="scan-subtitle">Aponte a câmera para o QR Code do crachá do funcionário</p>
       </div>
 
       <div className="scan-viewport">
@@ -154,12 +159,12 @@ export default function ScanPage({ onBack }: { onBack: () => void }) {
       </div>
 
       <div className="scan-bottom">
-        <div className="scan-or">ou insira o código do crachá manualmente</div>
+        <div className="scan-or">ou insira o ID do crachá manualmente</div>
         <div style={{ display: 'flex', gap: 8 }}>
           <input
             className="input-field"
             style={{ flex: 1, fontSize: 13, padding: '12px 14px' }}
-            placeholder="Código do crachá"
+            placeholder="ID do crachá"
             value={manualToken}
             onChange={(e) => setManualToken(e.target.value)}
           />
@@ -184,7 +189,7 @@ export default function ScanPage({ onBack }: { onBack: () => void }) {
             {result.type === 'success' ? (
               <>
                 <div className="result-icon">✅</div>
-                <div className="result-title-success">Refeição registrada!</div>
+                <div className="result-title-success">Refeição autorizada!</div>
 
                 <div className="result-meal-chip">
                   <span>{MEAL_META[Object.keys(MEAL_META).find(k => result.mealName?.toLowerCase().includes(k.replace(/-/g,' '))) || '']?.icon || '🍴'}</span>
@@ -192,7 +197,8 @@ export default function ScanPage({ onBack }: { onBack: () => void }) {
                 </div>
 
                 <div className="result-message">
-                  {result.restaurant && <><strong>{result.restaurant}</strong><br /></>}
+                  <strong>{result.employeeName}</strong><br />
+                  {result.restaurant && <>{result.restaurant}<br /></>}
                   Registrado às {result.time}
                 </div>
 

@@ -23,9 +23,6 @@ export class Restaurant {
   @Column({ length: 300, nullable: true })
   location: string;
 
-  @Column({ name: 'qr_code_token', length: 500, nullable: true, unique: true })
-  qrCodeToken: string;
-
   @Column({ default: true })
   isActive: boolean;
 

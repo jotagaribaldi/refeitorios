@@ -50,6 +50,8 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const bcrypt = __importStar(require("bcryptjs"));
+const uuid_1 = require("uuid");
+const QRCode = __importStar(require("qrcode"));
 const user_entity_1 = require("./user.entity");
 const restaurant_entity_1 = require("../restaurants/restaurant.entity");
 let UsersService = class UsersService {
@@ -80,8 +82,8 @@ let UsersService = class UsersService {
     }
     async create(dto, currentUser) {
         if (currentUser.role === user_entity_1.UserRole.GERENTE) {
-            if (dto.role !== user_entity_1.UserRole.FUNCIONARIO) {
-                throw new common_1.ForbiddenException('Gerente só pode criar funcionários');
+            if (dto.role !== user_entity_1.UserRole.FUNCIONARIO && dto.role !== user_entity_1.UserRole.FISCAL) {
+                throw new common_1.ForbiddenException('Gerente só pode criar funcionários ou fiscais');
             }
             dto.tenantId = currentUser.tenantId;
         }
@@ -90,8 +92,11 @@ let UsersService = class UsersService {
             throw new common_1.ConflictException('Email já cadastrado');
         const { password, allowedRestaurantIds, ...rest } = dto;
         const passwordHash = await bcrypt.hash(password, 10);
-        const user = this.repo.create({ ...rest, passwordHash });
-        if (allowedRestaurantIds?.length) {
+        const qrCodeToken = (dto.role === user_entity_1.UserRole.FUNCIONARIO || dto.role === user_entity_1.UserRole.FISCAL)
+            ? (0, uuid_1.v4)()
+            : null;
+        const user = this.repo.create({ ...rest, passwordHash, qrCodeToken });
+        if (allowedRestaurantIds?.length && dto.role === user_entity_1.UserRole.FUNCIONARIO) {
             user.allowedRestaurants = await this.restaurantRepo.findBy({
                 id: (0, typeorm_2.In)(allowedRestaurantIds),
             });
@@ -113,11 +118,11 @@ let UsersService = class UsersService {
         if (currentUser.role === user_entity_1.UserRole.GERENTE && user.tenantId !== currentUser.tenantId) {
             throw new common_1.ForbiddenException('Acesso negado');
         }
-        if (currentUser.role === user_entity_1.UserRole.GERENTE && dto.role && dto.role !== user_entity_1.UserRole.FUNCIONARIO) {
-            if (dto.role === user_entity_1.UserRole.GERENTE && user.id === currentUser.id) {
-            }
-            else {
-                throw new common_1.ForbiddenException('Gerente só pode gerenciar perfis de funcionários');
+        if (currentUser.role === user_entity_1.UserRole.GERENTE && dto.role) {
+            const allowedRoles = [user_entity_1.UserRole.FUNCIONARIO, user_entity_1.UserRole.FISCAL];
+            const isSelfGerente = user.id === currentUser.id && dto.role === user_entity_1.UserRole.GERENTE;
+            if (!allowedRoles.includes(dto.role) && !isSelfGerente) {
+                throw new common_1.ForbiddenException('Gerente só pode gerenciar perfis de funcionários e fiscais');
             }
         }
         if (currentUser.role === user_entity_1.UserRole.GERENTE && dto.tenantId && dto.tenantId !== currentUser.tenantId) {
@@ -154,6 +159,56 @@ let UsersService = class UsersService {
         if (!user.allowedRestaurants?.length)
             return [];
         return user.allowedRestaurants.map((r) => r.id);
+    }
+    async getUserQrData(userId) {
+        const user = await this.repo.findOne({
+            where: { id: userId },
+            relations: ['tenant'],
+        });
+        if (!user)
+            throw new common_1.NotFoundException('Usuário não encontrado');
+        if (!user.qrCodeToken) {
+            user.qrCodeToken = (0, uuid_1.v4)();
+            await this.repo.save(user);
+        }
+        const qrDataUrl = await QRCode.toDataURL(JSON.stringify({ userId: user.id, token: user.qrCodeToken }));
+        return {
+            userId: user.id,
+            qrCodeToken: user.qrCodeToken,
+            qrDataUrl,
+            userName: user.name,
+            employeeCode: user.employeeCode,
+            tenantName: user.tenant?.name || '',
+        };
+    }
+    async regenerateUserQr(userId) {
+        const user = await this.repo.findOne({ where: { id: userId } });
+        if (!user)
+            throw new common_1.NotFoundException('Usuário não encontrado');
+        user.qrCodeToken = (0, uuid_1.v4)();
+        await this.repo.save(user);
+        return this.getUserQrData(userId);
+    }
+    async findByQrToken(token) {
+        const user = await this.repo.findOne({
+            where: { qrCodeToken: token, isActive: true },
+            relations: ['tenant'],
+        });
+        if (!user)
+            throw new common_1.NotFoundException('QR Code inválido');
+        return user;
+    }
+    async findByQrTokenForFiscal(userId) {
+        const user = await this.repo.findOne({
+            where: { id: userId, isActive: true },
+            relations: ['tenant'],
+        });
+        if (!user)
+            throw new common_1.NotFoundException('Funcionário não encontrado');
+        if (!user.qrCodeToken) {
+            throw new common_1.NotFoundException('Funcionário não possui QR Code');
+        }
+        return user;
     }
     async seedRoot() {
         const exists = await this.repo.findOne({ where: { email: 'root@refeitorios.com' } });

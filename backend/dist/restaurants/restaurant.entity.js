@@ -19,7 +19,6 @@ let Restaurant = class Restaurant {
     tenant;
     name;
     location;
-    qrCodeToken;
     isActive;
     createdAt;
     updatedAt;
@@ -47,10 +46,6 @@ __decorate([
     (0, typeorm_1.Column)({ length: 300, nullable: true }),
     __metadata("design:type", String)
 ], Restaurant.prototype, "location", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'qr_code_token', length: 500, nullable: true, unique: true }),
-    __metadata("design:type", String)
-], Restaurant.prototype, "qrCodeToken", void 0);
 __decorate([
     (0, typeorm_1.Column)({ default: true }),
     __metadata("design:type", Boolean)

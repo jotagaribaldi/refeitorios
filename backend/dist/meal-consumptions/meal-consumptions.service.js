@@ -35,17 +35,17 @@ let MealConsumptionsService = class MealConsumptionsService {
         this.usersService = usersService;
     }
     async register(userId, tenantId, dto) {
-        const restaurant = await this.restaurantsService.findByQrToken(dto.qrCodeToken);
-        if (restaurant.tenantId !== tenantId) {
+        const user = await this.usersService.findByQrToken(dto.qrCodeToken);
+        if (user.id !== userId) {
+            throw new common_1.BadRequestException('QR Code não pertence a este usuário');
+        }
+        if (user.tenantId !== tenantId) {
             throw new common_1.BadRequestException('QR Code não pertence à sua empresa');
         }
         const allowedIds = await this.usersService.getAllowedRestaurantIds(userId);
-        if (allowedIds.length > 0 && !allowedIds.includes(restaurant.id)) {
-            throw new common_1.BadRequestException(`Você não tem permissão para realizar refeições em "${restaurant.name}"`);
-        }
-        const currentWindow = await this.mealTypesService.getCurrentMealWindow(restaurant.id);
+        const currentWindow = await this.mealTypesService.getCurrentMealWindowForTenant(tenantId, allowedIds);
         if (!currentWindow) {
-            throw new common_1.BadRequestException('Nenhuma refeição disponível neste horário para este refeitório');
+            throw new common_1.BadRequestException('Nenhuma refeição disponível neste horário');
         }
         if (!currentWindow.allowDuplicate) {
             const today = new Date().toISOString().split('T')[0];
@@ -73,7 +73,7 @@ let MealConsumptionsService = class MealConsumptionsService {
         const consumption = this.repo.create({
             tenantId,
             userId,
-            restaurantId: restaurant.id,
+            restaurantId: currentWindow.restaurantId,
             mealTypeId: currentWindow.mealTypeId,
             consumedAt: now,
             date: now.toISOString().split('T')[0],
@@ -82,8 +82,68 @@ let MealConsumptionsService = class MealConsumptionsService {
         const saved = await this.repo.save(consumption);
         return this.repo.findOne({
             where: { id: saved.id },
-            relations: ['restaurant', 'mealType'],
+            relations: ['restaurant', 'mealType', 'user'],
         });
+    }
+    async registerByFiscal(fiscalId, fiscalTenantId, targetUserId, notes) {
+        const targetUser = await this.usersService.findByQrTokenForFiscal(targetUserId);
+        if (!targetUser) {
+            throw new common_1.BadRequestException('QR Code inválido ou usuário não encontrado');
+        }
+        if (targetUser.tenantId !== fiscalTenantId) {
+            throw new common_1.BadRequestException('Funcionário não pertence a esta empresa');
+        }
+        const allowedIds = await this.usersService.getAllowedRestaurantIds(targetUserId);
+        const currentWindow = await this.mealTypesService.getCurrentMealWindowForTenant(fiscalTenantId, allowedIds);
+        if (!currentWindow) {
+            throw new common_1.BadRequestException('Nenhuma refeição disponível neste horário');
+        }
+        if (!currentWindow.allowDuplicate) {
+            const today = new Date().toISOString().split('T')[0];
+            const duplicate = await this.repo.findOne({
+                where: {
+                    userId: targetUserId,
+                    mealTypeId: currentWindow.mealTypeId,
+                    date: today,
+                },
+            });
+            if (duplicate) {
+                throw new common_1.BadRequestException(`${targetUser.name} já consumiu ${currentWindow.mealType.name} hoje`);
+            }
+        }
+        const now = new Date();
+        try {
+            await this.allowancesService.incrementConsumed(targetUserId, now.getFullYear(), now.getMonth() + 1);
+        }
+        catch (err) {
+            if (err.message === 'Saldo esgotado') {
+                throw new common_1.BadRequestException(`Saldo mensal de ${targetUser.name} está esgotado`);
+            }
+            throw new common_1.BadRequestException('Saldo mensal não configurado. Contate o gerente.');
+        }
+        const consumption = this.repo.create({
+            tenantId: fiscalTenantId,
+            userId: targetUserId,
+            restaurantId: currentWindow.restaurantId,
+            mealTypeId: currentWindow.mealTypeId,
+            consumedAt: now,
+            date: now.toISOString().split('T')[0],
+            notes,
+        });
+        const saved = await this.repo.save(consumption);
+        const result = await this.repo.findOne({
+            where: { id: saved.id },
+            relations: ['restaurant', 'mealType', 'user'],
+        });
+        return {
+            ...result,
+            employee: {
+                id: targetUser.id,
+                name: targetUser.name,
+                employeeCode: targetUser.employeeCode,
+            },
+            authorized: true,
+        };
     }
     async findAll(tenantId, filters) {
         const qb = this.repo.createQueryBuilder('c')

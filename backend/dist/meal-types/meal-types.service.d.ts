@@ -12,4 +12,5 @@ export declare class MealTypesService {
     getWindowsForRestaurant(restaurantId: string): Promise<MealTimeWindow[]>;
     upsertWindow(tenantId: string | undefined, dto: UpdateTimeWindowDto): Promise<MealTimeWindow>;
     getCurrentMealWindow(restaurantId: string): Promise<MealTimeWindow | null>;
+    getCurrentMealWindowForTenant(tenantId: string, allowedRestaurantIds: string[]): Promise<MealTimeWindow | null>;
 }

@@ -14,6 +14,7 @@ export declare class UsersService {
         email: string;
         role: UserRole;
         employeeCode: string;
+        qrCodeToken: string | null;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
@@ -26,5 +27,23 @@ export declare class UsersService {
     update(id: string, dto: UpdateUserDto, currentUser: any): Promise<any>;
     remove(id: string): Promise<User>;
     getAllowedRestaurantIds(userId: string): Promise<string[]>;
+    getUserQrData(userId: string): Promise<{
+        userId: string;
+        qrCodeToken: string;
+        qrDataUrl: string;
+        userName: string;
+        employeeCode: string;
+        tenantName: string;
+    }>;
+    regenerateUserQr(userId: string): Promise<{
+        userId: string;
+        qrCodeToken: string;
+        qrDataUrl: string;
+        userName: string;
+        employeeCode: string;
+        tenantName: string;
+    }>;
+    findByQrToken(token: string): Promise<User>;
+    findByQrTokenForFiscal(userId: string): Promise<User>;
     seedRoot(): Promise<void>;
 }

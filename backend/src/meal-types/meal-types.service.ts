@@ -79,7 +79,6 @@ export class MealTypesService {
 
   async getCurrentMealWindow(restaurantId: string) {
     const now = new Date();
-    // Ajuste para hora local (se necessário, mas assumimos que start/end no banco são locais ou compatíveis)
     const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
     console.log(`[getCurrentMealWindow] restaurantId: ${restaurantId}, currentTime: ${currentTime}`);
@@ -90,7 +89,33 @@ export class MealTypesService {
     });
 
     const window = windows.find((w) => {
-      // Formato time no PostgreSQL pode vir como "06:00:00" ou "06:00"
+      const start = w.startTime.slice(0, 5);
+      const end = w.endTime.slice(0, 5);
+      return currentTime >= start && currentTime <= end;
+    });
+
+    return window ?? null;
+  }
+
+  async getCurrentMealWindowForTenant(tenantId: string, allowedRestaurantIds: string[]) {
+    const now = new Date();
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    console.log(`[getCurrentMealWindowForTenant] tenantId: ${tenantId}, allowedIds: ${allowedRestaurantIds}, currentTime: ${currentTime}`);
+
+    const qb = this.windowsRepo.createQueryBuilder('w')
+      .leftJoinAndSelect('w.mealType', 'mealType')
+      .leftJoinAndSelect('w.restaurant', 'restaurant')
+      .where('w.tenantId = :tenantId', { tenantId })
+      .andWhere('w.isActive = true');
+
+    if (allowedRestaurantIds.length > 0) {
+      qb.andWhere('w.restaurantId IN (:...allowedIds)', { allowedIds: allowedRestaurantIds });
+    }
+
+    const windows = await qb.getMany();
+
+    const window = windows.find((w) => {
       const start = w.startTime.slice(0, 5);
       const end = w.endTime.slice(0, 5);
       return currentTime >= start && currentTime <= end;

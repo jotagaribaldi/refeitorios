@@ -6,7 +6,6 @@ export declare class Restaurant {
     tenant: Tenant;
     name: string;
     location: string;
-    qrCodeToken: string;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;

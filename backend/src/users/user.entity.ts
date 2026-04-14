@@ -41,6 +41,9 @@ export class User {
   @Column({ name: 'employee_code', length: 50, nullable: true })
   employeeCode: string;
 
+  @Column({ name: 'qr_code_token', type: 'varchar', length: 500, nullable: true })
+  qrCodeToken: string | null;
+
   @Column({ default: true })
   isActive: boolean;
 

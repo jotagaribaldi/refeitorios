@@ -20,6 +20,7 @@ var UserRole;
     UserRole["ROOT"] = "ROOT";
     UserRole["GERENTE"] = "GERENTE";
     UserRole["FUNCIONARIO"] = "FUNCIONARIO";
+    UserRole["FISCAL"] = "FISCAL";
 })(UserRole || (exports.UserRole = UserRole = {}));
 let User = class User {
     id;
@@ -30,6 +31,7 @@ let User = class User {
     passwordHash;
     role;
     employeeCode;
+    qrCodeToken;
     isActive;
     createdAt;
     updatedAt;
@@ -71,6 +73,10 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'employee_code', length: 50, nullable: true }),
     __metadata("design:type", String)
 ], User.prototype, "employeeCode", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'qr_code_token', type: 'varchar', length: 500, nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "qrCodeToken", void 0);
 __decorate([
     (0, typeorm_1.Column)({ default: true }),
     __metadata("design:type", Boolean)

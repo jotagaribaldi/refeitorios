@@ -32,10 +32,6 @@ let RestaurantsController = class RestaurantsController {
         const tenantId = req.user.role === user_entity_1.UserRole.ROOT ? undefined : req.user.tenantId;
         return this.service.findOne(id, tenantId);
     }
-    getQr(id, req) {
-        const tenantId = req.user.role === user_entity_1.UserRole.ROOT ? undefined : req.user.tenantId;
-        return this.service.getQrCode(id, tenantId);
-    }
     create(dto, req) {
         const tenantId = req.user.role === user_entity_1.UserRole.ROOT
             ? dto.tenantId
@@ -48,10 +44,6 @@ let RestaurantsController = class RestaurantsController {
     update(id, dto, req) {
         const tenantId = req.user.role === user_entity_1.UserRole.ROOT ? undefined : req.user.tenantId;
         return this.service.update(id, tenantId, dto);
-    }
-    regenerateQr(id, req) {
-        const tenantId = req.user.role === user_entity_1.UserRole.ROOT ? undefined : req.user.tenantId;
-        return this.service.regenerateQr(id, tenantId);
     }
     remove(id, req) {
         const tenantId = req.user.role === user_entity_1.UserRole.ROOT ? undefined : req.user.tenantId;
@@ -77,15 +69,6 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], RestaurantsController.prototype, "findOne", null);
 __decorate([
-    (0, common_1.Get)(':id/qrcode'),
-    (0, roles_guard_1.Roles)(user_entity_1.UserRole.ROOT, user_entity_1.UserRole.GERENTE),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Request)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
-    __metadata("design:returntype", void 0)
-], RestaurantsController.prototype, "getQr", null);
-__decorate([
     (0, common_1.Post)(),
     (0, roles_guard_1.Roles)(user_entity_1.UserRole.ROOT, user_entity_1.UserRole.GERENTE),
     __param(0, (0, common_1.Body)()),
@@ -104,15 +87,6 @@ __decorate([
     __metadata("design:paramtypes", [String, restaurant_dto_1.UpdateRestaurantDto, Object]),
     __metadata("design:returntype", void 0)
 ], RestaurantsController.prototype, "update", null);
-__decorate([
-    (0, common_1.Post)(':id/regenerate-qr'),
-    (0, roles_guard_1.Roles)(user_entity_1.UserRole.ROOT, user_entity_1.UserRole.GERENTE),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Request)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
-    __metadata("design:returntype", void 0)
-], RestaurantsController.prototype, "regenerateQr", null);
 __decorate([
     (0, common_1.Delete)(':id'),
     (0, roles_guard_1.Roles)(user_entity_1.UserRole.ROOT, user_entity_1.UserRole.GERENTE),

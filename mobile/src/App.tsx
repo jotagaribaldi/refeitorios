@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
+import BadgePage from './pages/BadgePage';
 import HomePage from './pages/HomePage';
-import ScanPage from './pages/ScanPage';
+import ScanFiscalPage from './pages/ScanFiscalPage';
 import HistoryPage from './pages/HistoryPage';
 import ProfilePage from './pages/ProfilePage';
 
@@ -15,10 +16,12 @@ function AppShell() {
 
   if (!isAuthenticated) return <LoginPage />;
 
+  const isFiscal = user?.role === 'FISCAL';
+
   if (scanning) {
     return (
       <div className="app-shell">
-        <ScanPage onBack={() => { setScanning(false); setTab('home'); }} />
+        <ScanFiscalPage onBack={() => { setScanning(false); setTab('home'); }} />
       </div>
     );
   }
@@ -28,7 +31,7 @@ function AppShell() {
       {/* Status Bar */}
       <div className="status-bar">
         <span className="status-title">
-          {tab === 'home'    ? '🏠 Início'    :
+          {tab === 'home'    ? (isFiscal ? '📷 Fiscal' : '🏷️ Meu Crachá') :
            tab === 'history' ? '📋 Histórico' : '👤 Perfil'}
         </span>
         <div className="status-right">
@@ -40,7 +43,7 @@ function AppShell() {
 
       {/* Content */}
       <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        {tab === 'home'    && <HomePage onScan={() => setScanning(true)} />}
+        {tab === 'home' && (isFiscal ? <HomePage onScan={() => setScanning(true)} /> : <BadgePage />)}
         {tab === 'history' && <HistoryPage />}
         {tab === 'profile' && <ProfilePage />}
       </div>
@@ -51,19 +54,24 @@ function AppShell() {
           className={`tab-item ${tab === 'home' ? 'active' : ''}`}
           onClick={() => setTab('home')}
         >
-          <span className="tab-icon">🏠</span>
-          <span className="tab-label">Início</span>
+          <span className="tab-icon">{isFiscal ? '📷' : '🏷️'}</span>
+          <span className="tab-label">{isFiscal ? 'Início' : 'Crachá'}</span>
         </button>
 
-        {/* Scan Button (elevated center) */}
-        <div className="tab-scan">
-          <button className="tab-scan-btn" onClick={() => setScanning(true)}>
-            📷
-          </button>
-          <span className="tab-label" style={{ marginTop: 6, color: 'var(--text-dim)', fontSize: 10 }}>
-            Scan
-          </span>
-        </div>
+        {/* Scan Button (elevated center) - Only for FISCAL */}
+        {isFiscal && (
+          <div className="tab-scan">
+            <button className="tab-scan-btn" onClick={() => setScanning(true)}>
+              📷
+            </button>
+            <span className="tab-label" style={{ marginTop: 6, color: 'var(--text-dim)', fontSize: 10 }}>
+              Scan
+            </span>
+          </div>
+        )}
+
+        {/* Placeholder for FUNCIONARIO */}
+        {!isFiscal && <div style={{ flex: 1 }} />}
 
         <button
           className={`tab-item ${tab === 'history' ? 'active' : ''}`}

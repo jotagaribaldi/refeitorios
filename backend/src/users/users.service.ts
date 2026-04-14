@@ -4,6 +4,8 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
+import { v4 as uuidv4 } from 'uuid';
+import * as QRCode from 'qrcode';
 import { User, UserRole } from './user.entity';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
 import { Restaurant } from '../restaurants/restaurant.entity';
@@ -50,7 +52,10 @@ export class UsersService {
 
     const { password, allowedRestaurantIds, ...rest } = dto;
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = this.repo.create({ ...rest, passwordHash });
+    const qrCodeToken = (dto.role === UserRole.FUNCIONARIO || dto.role === UserRole.FISCAL)
+      ? uuidv4()
+      : null;
+    const user = this.repo.create({ ...rest, passwordHash, qrCodeToken });
 
     // Vincula refeitórios permitidos (apenas para FUNCIONARIO)
     if (allowedRestaurantIds?.length && dto.role === UserRole.FUNCIONARIO) {
@@ -135,14 +140,50 @@ export class UsersService {
       relations: ['tenant'],
     });
     if (!user) throw new NotFoundException('Usuário não encontrado');
-    // O QR Code contém apenas o userId — o backend valida tudo na hora do scan
+    if (!user.qrCodeToken) {
+      user.qrCodeToken = uuidv4();
+      await this.repo.save(user);
+    }
+    const qrDataUrl = await QRCode.toDataURL(
+      JSON.stringify({ userId: user.id, token: user.qrCodeToken }),
+    );
     return {
       userId: user.id,
-      qrContent: JSON.stringify({ userId: user.id }),
+      qrCodeToken: user.qrCodeToken,
+      qrDataUrl,
       userName: user.name,
       employeeCode: user.employeeCode,
       tenantName: user.tenant?.name || '',
     };
+  }
+
+  async regenerateUserQr(userId: string) {
+    const user = await this.repo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+    user.qrCodeToken = uuidv4();
+    await this.repo.save(user);
+    return this.getUserQrData(userId);
+  }
+
+  async findByQrToken(token: string) {
+    const user = await this.repo.findOne({
+      where: { qrCodeToken: token, isActive: true },
+      relations: ['tenant'],
+    });
+    if (!user) throw new NotFoundException('QR Code inválido');
+    return user;
+  }
+
+  async findByQrTokenForFiscal(userId: string) {
+    const user = await this.repo.findOne({
+      where: { id: userId, isActive: true },
+      relations: ['tenant'],
+    });
+    if (!user) throw new NotFoundException('Funcionário não encontrado');
+    if (!user.qrCodeToken) {
+      throw new NotFoundException('Funcionário não possui QR Code');
+    }
+    return user;
   }
 
   async seedRoot() {

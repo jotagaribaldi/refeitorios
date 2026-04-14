@@ -5,7 +5,8 @@ import { Restaurant } from '../restaurants/restaurant.entity';
 export declare enum UserRole {
     ROOT = "ROOT",
     GERENTE = "GERENTE",
-    FUNCIONARIO = "FUNCIONARIO"
+    FUNCIONARIO = "FUNCIONARIO",
+    FISCAL = "FISCAL"
 }
 export declare class User {
     id: string;
@@ -16,6 +17,7 @@ export declare class User {
     passwordHash: string;
     role: UserRole;
     employeeCode: string;
+    qrCodeToken: string | null;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;

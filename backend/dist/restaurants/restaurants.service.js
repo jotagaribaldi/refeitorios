@@ -1,43 +1,10 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
@@ -49,8 +16,6 @@ exports.RestaurantsService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
-const uuid_1 = require("uuid");
-const QRCode = __importStar(require("qrcode"));
 const restaurant_entity_1 = require("./restaurant.entity");
 let RestaurantsService = class RestaurantsService {
     repo;
@@ -76,34 +41,15 @@ let RestaurantsService = class RestaurantsService {
             throw new common_1.NotFoundException('Refeitório não encontrado');
         return r;
     }
-    async findByQrToken(token) {
-        const r = await this.repo.findOne({ where: { qrCodeToken: token, isActive: true } });
-        if (!r)
-            throw new common_1.NotFoundException('QR Code inválido');
-        return r;
-    }
     async create(dto, tenantId) {
-        const token = (0, uuid_1.v4)();
         const { tenantId: _ignored, ...rest } = dto;
-        const restaurant = this.repo.create({ ...rest, tenantId, qrCodeToken: token });
+        const restaurant = this.repo.create({ ...rest, tenantId });
         return this.repo.save(restaurant);
     }
     async update(id, tenantId, dto) {
         const r = await this.findOne(id, tenantId);
         Object.assign(r, dto);
         return this.repo.save(r);
-    }
-    async regenerateQr(id, tenantId) {
-        const r = await this.findOne(id, tenantId);
-        r.qrCodeToken = (0, uuid_1.v4)();
-        await this.repo.save(r);
-        const qrDataUrl = await QRCode.toDataURL(JSON.stringify({ restaurantId: r.id, token: r.qrCodeToken }));
-        return { qrCodeToken: r.qrCodeToken, qrDataUrl };
-    }
-    async getQrCode(id, tenantId) {
-        const r = await this.findOne(id, tenantId);
-        const qrDataUrl = await QRCode.toDataURL(JSON.stringify({ restaurantId: r.id, token: r.qrCodeToken }));
-        return { qrCodeToken: r.qrCodeToken, qrDataUrl };
     }
     async remove(id, tenantId) {
         const r = await this.findOne(id, tenantId);

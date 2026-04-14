@@ -15,14 +15,31 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MealConsumptionsController = void 0;
 const common_1 = require("@nestjs/common");
 const passport_1 = require("@nestjs/passport");
+const class_validator_1 = require("class-validator");
 const meal_consumptions_service_1 = require("./meal-consumptions.service");
 const meal_consumption_dto_1 = require("./meal-consumption.dto");
 const roles_guard_1 = require("../auth/roles.guard");
 const user_entity_1 = require("../users/user.entity");
+class ScanUserQrDto {
+    userId;
+    notes;
+}
+__decorate([
+    (0, class_validator_1.IsUUID)(),
+    __metadata("design:type", String)
+], ScanUserQrDto.prototype, "userId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], ScanUserQrDto.prototype, "notes", void 0);
 let MealConsumptionsController = class MealConsumptionsController {
     service;
     constructor(service) {
         this.service = service;
+    }
+    scanEmployee(dto, req) {
+        return this.service.registerByFiscal(req.user.id, req.user.tenantId, dto.userId, dto.notes);
     }
     register(dto, req) {
         return this.service.register(req.user.id, req.user.tenantId, dto);
@@ -36,6 +53,16 @@ let MealConsumptionsController = class MealConsumptionsController {
     }
 };
 exports.MealConsumptionsController = MealConsumptionsController;
+__decorate([
+    (0, common_1.Post)('scan'),
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_guard_1.Roles)(user_entity_1.UserRole.FISCAL),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [ScanUserQrDto, Object]),
+    __metadata("design:returntype", void 0)
+], MealConsumptionsController.prototype, "scanEmployee", null);
 __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),

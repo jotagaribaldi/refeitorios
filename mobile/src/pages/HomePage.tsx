@@ -120,8 +120,8 @@ export default function HomePage({ onScan }: { onScan: () => void }) {
       {/* Quick Actions */}
       <div className="quick-actions">
         <button className="quick-action-btn" onClick={onScan}>
-          <span className="qa-icon">📲</span>
-          <span className="qa-label">Escanear QR</span>
+          <span className="qa-icon">📷</span>
+          <span className="qa-label">Escanear Crachá</span>
           <span className="qa-sub">Registrar refeição</span>
         </button>
         <div className="quick-action-btn" style={{ cursor: 'default' }}>

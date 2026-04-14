@@ -27,7 +27,7 @@ export class MealConsumptionsController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.FISCAL)
   scanEmployee(@Body() dto: ScanUserQrDto, @Request() req: any) {
-    return this.service.registerByUserId(req.user.id, req.user.tenantId, dto.userId, dto.notes);
+    return this.service.registerByFiscal(req.user.id, req.user.tenantId, dto.userId, dto.notes);
   }
 
   // Funcionário escaneia QR e registra consumo (legado - mantido por compatibilidade)

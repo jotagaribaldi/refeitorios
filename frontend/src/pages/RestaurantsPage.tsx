@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -11,10 +10,8 @@ export default function RestaurantsPage() {
   const [tenants, setTenants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [showQr, setShowQr] = useState<any>(null);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ name: '', location: '', tenantId: '' });
-  const [qrData, setQrData] = useState<{ qrCodeToken: string; qrDataUrl: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -71,18 +68,6 @@ export default function RestaurantsPage() {
     }
   };
 
-  const viewQr = async (r: any) => {
-    const { data } = await api.get(`/restaurants/${r.id}/qrcode`);
-    setQrData(data);
-    setShowQr(r);
-  };
-
-  const regenerateQr = async (r: any) => {
-    if (!confirm('Regenerar QR Code? O QR Code atual se tornará inválido.')) return;
-    const { data } = await api.post(`/restaurants/${r.id}/regenerate-qr`);
-    setQrData(data);
-  };
-
   const remove = async (id: string) => {
     if (!confirm('Desativar este refeitório?')) return;
     await api.delete(`/restaurants/${id}`);
@@ -94,7 +79,7 @@ export default function RestaurantsPage() {
       <div className="page-header flex items-center justify-between">
         <div>
           <h1 className="page-title">🍽️ Refeitórios</h1>
-          <p className="page-subtitle">Gerencie os refeitórios e seus QR Codes</p>
+          <p className="page-subtitle">Gerencie os refeitórios da empresa</p>
         </div>
         <button className="btn btn-primary" onClick={openCreate}>+ Novo Refeitório</button>
       </div>
@@ -133,7 +118,6 @@ export default function RestaurantsPage() {
                   </td>
                   <td>
                     <div className="flex gap-8">
-                      <button className="btn btn-sm btn-secondary" onClick={() => viewQr(r)} title="Ver QR Code">📲</button>
                       <button className="btn btn-sm btn-secondary" onClick={() => openEdit(r)}>✏️</button>
                       <button className="btn btn-sm btn-danger" onClick={() => remove(r.id)}>🗑️</button>
                     </div>
@@ -195,36 +179,6 @@ export default function RestaurantsPage() {
               <button className="btn btn-primary" onClick={save} disabled={saving}>
                 {saving ? 'Salvando...' : '💾 Salvar'}
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal QR Code */}
-      {showQr && qrData && (
-        <div className="modal-overlay" onClick={() => setShowQr(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center' }}>
-            <div className="modal-header">
-              <h2 className="modal-title">QR Code — {showQr.name}</h2>
-              <button className="modal-close" onClick={() => setShowQr(null)}>✕</button>
-            </div>
-
-            <div className="qr-container">
-              <QRCodeSVG
-                value={JSON.stringify({ restaurantId: showQr.id, token: qrData.qrCodeToken })}
-                size={220}
-                level="H"
-              />
-              <p style={{ fontSize: 11, color: '#333', wordBreak: 'break-all', maxWidth: 220 }}>
-                {showQr.name}
-              </p>
-            </div>
-
-            <div className="modal-actions" style={{ justifyContent: 'center', marginTop: 16 }}>
-              <button className="btn btn-danger" onClick={() => regenerateQr(showQr)}>
-                🔄 Regenerar QR
-              </button>
-              <button className="btn btn-secondary" onClick={() => setShowQr(null)}>Fechar</button>
             </div>
           </div>
         </div>

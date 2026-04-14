@@ -12,9 +12,10 @@ export default defineConfig({
       interval: 1000,
     },
     proxy: {
-      '/api': {
+      '/refeitorios/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/refeitorios\/api/, '/api'),
       },
     },
   },
