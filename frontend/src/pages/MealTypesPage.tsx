@@ -20,7 +20,7 @@ export default function MealTypesPage() {
   const [saved, setSaved] = useState<string | null>(null);
 
   const loadBase = () => {
-    Promise.all([api.get('/api/restaurants'), api.get('/api/meal-types')])
+    Promise.all([api.get('/restaurants'), api.get('/meal-types')])
       .then(([rest, types]) => {
         setRestaurants(rest.data);
         setMealTypes(types.data);
@@ -64,7 +64,7 @@ export default function MealTypesPage() {
     const { mealTypeId, startTime, endTime, allowDuplicate, isActive } = windows[idx];
     setSaving(mealTypeId);
     try {
-      await api.put('/api/meal-types/time-windows', {
+      await api.put('/meal-types/time-windows', {
         mealTypeId,
         startTime,
         endTime,
@@ -96,7 +96,7 @@ export default function MealTypesPage() {
   const deleteType = async (id: string) => {
     if (!confirm('Excluir este tipo de refeição? Isso removerá horários vinculados em todos os refeitórios.')) return;
     try {
-      await api.delete(`/api/meal-types/${id}`);
+      await api.delete(`/meal-types/${id}`);
       loadBase();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Erro ao excluir');

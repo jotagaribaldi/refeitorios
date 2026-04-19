@@ -34,9 +34,9 @@ export default function UsersPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const promises: Promise<any>[] = [api.get('/api/users')];
-      if (isRoot) promises.push(api.get('/api/tenants'));
-      promises.push(api.get('/api/restaurants'));
+      const promises: Promise<any>[] = [api.get('/users')];
+      if (isRoot) promises.push(api.get('/tenants'));
+      promises.push(api.get('/restaurants'));
 
       const [uRes, tRes, rRes] = await Promise.all(
         isRoot ? promises : [promises[0], promises[1]],
@@ -58,7 +58,7 @@ export default function UsersPage() {
     setForm((f) => ({ ...f, tenantId, allowedRestaurantIds: [] }));
     if (!tenantId) { setRestaurants([]); return; }
     try {
-      const { data } = await api.get('/api/restaurants');
+      const { data } = await api.get('/restaurants');
       setRestaurants(data.filter((r: any) => r.tenantId === tenantId));
     } catch { setRestaurants([]); }
   };
@@ -86,7 +86,7 @@ export default function UsersPage() {
     });
     // Filtra refeitórios pelo tenant do usuário editado (ROOT)
     if (isRoot && u.tenantId) {
-      api.get('/api/restaurants').then(({ data }) => {
+      api.get('/restaurants').then(({ data }) => {
         setRestaurants(data.filter((r: any) => r.tenantId === u.tenantId));
       });
     }
@@ -115,9 +115,9 @@ export default function UsersPage() {
       if (!isRoot) delete payload.tenantId;
 
       if (editing) {
-        await api.put(`/api/users/${editing.id}`, payload);
+        await api.put(`/users/${editing.id}`, payload);
       } else {
-        await api.post('/api/users', payload);
+        await api.post('/users', payload);
       }
       setShowModal(false);
       load();

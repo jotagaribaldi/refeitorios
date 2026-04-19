@@ -19,7 +19,7 @@ function dateLabel(dateStr: string) {
   return format(d, "d 'de' MMMM", { locale: ptBR });
 }
 
-export default function HomePage({ onScan }: { onScan: () => void }) {
+export default function HomePage({ onScan, onViewBadge }: { onScan: () => void; onViewBadge: () => void }) {
   const { user } = useAuth();
   const [allowance, setAllowance] = useState<any>(null);
   const [consumptions, setConsumptions] = useState<any[]>([]);
@@ -123,6 +123,11 @@ export default function HomePage({ onScan }: { onScan: () => void }) {
           <span className="qa-icon">📷</span>
           <span className="qa-label">Escanear Crachá</span>
           <span className="qa-sub">Registrar refeição</span>
+        </button>
+        <button className="quick-action-btn" onClick={onViewBadge}>
+          <span className="qa-icon">🏷️</span>
+          <span className="qa-label">Visualizar Crachá</span>
+          <span className="qa-sub">Meu QR Code</span>
         </button>
         <div className="quick-action-btn" style={{ cursor: 'default' }}>
           <span className="qa-icon">📋</span>

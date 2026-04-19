@@ -17,9 +17,9 @@ export default defineConfig({
       '/refeitorios/api': {
         target: 'http://localhost:3003',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/\/refeitorios\/api/ , '/api')
+        rewrite: (path) => path.replace(/^\/refeitorios\/api/, '/api'),
 
-       },
+      },
     },
   },
 })

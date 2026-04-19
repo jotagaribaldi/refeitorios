@@ -13,10 +13,12 @@ function AppShell() {
   const { isAuthenticated, user } = useAuth();
   const [tab, setTab] = useState<Tab>('home');
   const [scanning, setScanning] = useState(false);
+  const [viewingBadge, setViewingBadge] = useState(false);
 
   if (!isAuthenticated) return <LoginPage />;
 
-  const isFiscal = user?.role === 'FISCAL';
+  // Tanto FISCAL quanto GERENTE têm acesso ao scanner de QR Code
+  const isScanner = user?.role === 'FISCAL' || user?.role === 'GERENTE';
 
   if (scanning) {
     return (
@@ -26,12 +28,34 @@ function AppShell() {
     );
   }
 
+  if (viewingBadge && isScanner) {
+    return (
+      <div className="app-shell">
+        <div className="status-bar">
+          <button
+            onClick={() => setViewingBadge(false)}
+            style={{ background: 'none', border: 'none', color: 'var(--primary)', font: 'inherit', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+          >
+            ← Voltar
+          </button>
+          <span className="status-title" style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
+            🏷️ Meu Crachá
+          </span>
+          <div style={{ width: 60 }} />
+        </div>
+        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <BadgePage />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app-shell">
       {/* Status Bar */}
       <div className="status-bar">
         <span className="status-title">
-          {tab === 'home'    ? (isFiscal ? '📷 Fiscal' : '🏷️ Meu Crachá') :
+          {tab === 'home'    ? (isScanner ? '📷 Scanner' : '🏷️ Meu Crachá') :
            tab === 'history' ? '📋 Histórico' : '👤 Perfil'}
         </span>
         <div className="status-right">
@@ -43,7 +67,10 @@ function AppShell() {
 
       {/* Content */}
       <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        {tab === 'home' && (isFiscal ? <HomePage onScan={() => setScanning(true)} /> : <BadgePage />)}
+        {tab === 'home' && (isScanner
+          ? <HomePage onScan={() => setScanning(true)} onViewBadge={() => setViewingBadge(true)} />
+          : <BadgePage />
+        )}
         {tab === 'history' && <HistoryPage />}
         {tab === 'profile' && <ProfilePage />}
       </div>
@@ -54,12 +81,12 @@ function AppShell() {
           className={`tab-item ${tab === 'home' ? 'active' : ''}`}
           onClick={() => setTab('home')}
         >
-          <span className="tab-icon">{isFiscal ? '📷' : '🏷️'}</span>
-          <span className="tab-label">{isFiscal ? 'Início' : 'Crachá'}</span>
+          <span className="tab-icon">{isScanner ? '📷' : '🏷️'}</span>
+          <span className="tab-label">{isScanner ? 'Início' : 'Crachá'}</span>
         </button>
 
-        {/* Scan Button (elevated center) - Only for FISCAL */}
-        {isFiscal && (
+        {/* Scan Button (elevated center) - Only for FISCAL e GERENTE */}
+        {isScanner && (
           <div className="tab-scan">
             <button className="tab-scan-btn" onClick={() => setScanning(true)}>
               📷
@@ -71,7 +98,7 @@ function AppShell() {
         )}
 
         {/* Placeholder for FUNCIONARIO */}
-        {!isFiscal && <div style={{ flex: 1 }} />}
+        {!isScanner && <div style={{ flex: 1 }} />}
 
         <button
           className={`tab-item ${tab === 'history' ? 'active' : ''}`}
