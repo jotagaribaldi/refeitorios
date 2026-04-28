@@ -55,7 +55,7 @@ let UsersController = class UsersController {
     update(id, dto, req) {
         return this.service.update(id, dto, req.user);
     }
-    remove(id) { return this.service.remove(id); }
+    remove(id, req) { return this.service.remove(id, req.user); }
 };
 exports.UsersController = UsersController;
 __decorate([
@@ -113,10 +113,11 @@ __decorate([
 ], UsersController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    (0, roles_guard_1.Roles)(user_entity_1.UserRole.ROOT),
+    (0, roles_guard_1.Roles)(user_entity_1.UserRole.ROOT, user_entity_1.UserRole.GERENTE),
     __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "remove", null);
 exports.UsersController = UsersController = __decorate([

@@ -142,10 +142,18 @@ let UsersService = class UsersService {
         const { passwordHash: _, ...result } = saved;
         return result;
     }
-    async remove(id) {
+    async remove(id, currentUser) {
         const user = await this.repo.findOne({ where: { id } });
         if (!user)
             throw new common_1.NotFoundException('Usuário não encontrado');
+        if (currentUser.role === user_entity_1.UserRole.GERENTE) {
+            if (user.tenantId !== currentUser.tenantId) {
+                throw new common_1.ForbiddenException('Acesso negado');
+            }
+            if (user.role === user_entity_1.UserRole.ROOT || (user.role === user_entity_1.UserRole.GERENTE && user.id !== currentUser.id)) {
+                throw new common_1.ForbiddenException('Gerente não pode excluir este perfil');
+            }
+        }
         user.isActive = false;
         return this.repo.save(user);
     }

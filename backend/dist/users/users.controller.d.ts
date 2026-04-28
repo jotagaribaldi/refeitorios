@@ -39,5 +39,5 @@ export declare class UsersController {
     }>;
     create(dto: CreateUserDto, req: any): Promise<any>;
     update(id: string, dto: UpdateUserDto, req: any): Promise<any>;
-    remove(id: string): Promise<import("./user.entity").User>;
+    remove(id: string, req: any): Promise<import("./user.entity").User>;
 }

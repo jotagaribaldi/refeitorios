@@ -115,9 +115,19 @@ export class UsersService {
     return result;
   }
 
-  async remove(id: string) {
+  async remove(id: string, currentUser: any) {
     const user = await this.repo.findOne({ where: { id } });
     if (!user) throw new NotFoundException('Usuário não encontrado');
+    
+    if (currentUser.role === UserRole.GERENTE) {
+      if (user.tenantId !== currentUser.tenantId) {
+        throw new ForbiddenException('Acesso negado');
+      }
+      if (user.role === UserRole.ROOT || (user.role === UserRole.GERENTE && user.id !== currentUser.id)) {
+        throw new ForbiddenException('Gerente não pode excluir este perfil');
+      }
+    }
+    
     user.isActive = false;
     return this.repo.save(user);
   }

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
-const ROLES = ['GERENTE', 'FUNCIONARIO'];
+const ROLES = ['GERENTE', 'FISCAL', 'FUNCIONARIO'];
 
 export default function UsersPage() {
   const { user: me } = useAuth();
@@ -29,7 +29,7 @@ export default function UsersPage() {
     allowedRestaurantIds: [] as string[],
   });
 
-  const availableRoles = isRoot ? ROLES : ['FUNCIONARIO'];
+  const availableRoles = isRoot ? ROLES : ['FISCAL', 'FUNCIONARIO'];
 
   const load = async () => {
     setLoading(true);
@@ -130,8 +130,12 @@ export default function UsersPage() {
 
   const deactivate = async (id: string) => {
     if (!confirm('Desativar este usuário?')) return;
-    await api.delete(`/users/${id}`);
-    load();
+    try {
+      await api.delete(`/users/${id}`);
+      load();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Erro ao desativar usuário');
+    }
   };
 
   const viewQr = async (u: any) => {

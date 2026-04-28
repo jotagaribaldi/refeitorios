@@ -64,6 +64,6 @@ export class UsersController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ROOT)
-  remove(@Param('id') id: string) { return this.service.remove(id); }
+  @Roles(UserRole.ROOT, UserRole.GERENTE)
+  remove(@Param('id') id: string, @Request() req: any) { return this.service.remove(id, req.user); }
 }

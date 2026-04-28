@@ -25,7 +25,7 @@ export declare class UsersService {
     findOne(id: string): Promise<any>;
     create(dto: CreateUserDto, currentUser: any): Promise<any>;
     update(id: string, dto: UpdateUserDto, currentUser: any): Promise<any>;
-    remove(id: string): Promise<User>;
+    remove(id: string, currentUser: any): Promise<User>;
     getAllowedRestaurantIds(userId: string): Promise<string[]>;
     getUserQrData(userId: string): Promise<{
         userId: string;
