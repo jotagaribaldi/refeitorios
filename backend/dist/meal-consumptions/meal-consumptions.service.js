@@ -68,7 +68,7 @@ let MealConsumptionsService = class MealConsumptionsService {
             if (err.message === 'Saldo esgotado') {
                 throw new common_1.BadRequestException('Saldo mensal esgotado');
             }
-            throw new common_1.NotFoundException('Saldo mensal não configurado. Contate o gerente.');
+            throw new common_1.BadRequestException(`Saldo mensal não configurado para ${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}. Contate o gerente.`);
         }
         const consumption = this.repo.create({
             tenantId,
@@ -87,9 +87,6 @@ let MealConsumptionsService = class MealConsumptionsService {
     }
     async registerByFiscal(fiscalId, fiscalTenantId, targetUserId, notes) {
         const targetUser = await this.usersService.findByQrTokenForFiscal(targetUserId);
-        if (!targetUser) {
-            throw new common_1.BadRequestException('QR Code inválido ou usuário não encontrado');
-        }
         if (targetUser.tenantId !== fiscalTenantId) {
             throw new common_1.BadRequestException('Funcionário não pertence a esta empresa');
         }
@@ -117,9 +114,9 @@ let MealConsumptionsService = class MealConsumptionsService {
         }
         catch (err) {
             if (err.message === 'Saldo esgotado') {
-                throw new common_1.BadRequestException(`Saldo mensal de ${targetUser.name} está esgotado`);
+                throw new common_1.BadRequestException(`Saldo de ${targetUser.name} está esgotado para este mês`);
             }
-            throw new common_1.BadRequestException('Saldo mensal não configurado. Contate o gerente.');
+            throw new common_1.BadRequestException(`Saldo de ${targetUser.name} não foi configurado para ${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}. Contate o gerente.`);
         }
         const consumption = this.repo.create({
             tenantId: fiscalTenantId,

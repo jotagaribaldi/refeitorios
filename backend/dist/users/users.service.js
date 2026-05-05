@@ -208,11 +208,14 @@ let UsersService = class UsersService {
     }
     async findByQrTokenForFiscal(userId) {
         const user = await this.repo.findOne({
-            where: { id: userId, isActive: true },
+            where: { id: userId },
             relations: ['tenant'],
         });
         if (!user)
             throw new common_1.NotFoundException('Funcionário não encontrado');
+        if (!user.isActive) {
+            throw new common_1.BadRequestException(`Funcionário ${user.name} está inativo e não pode utilizar o refeitório`);
+        }
         if (!user.qrCodeToken) {
             throw new common_1.NotFoundException('Funcionário não possui QR Code');
         }

@@ -65,7 +65,7 @@ export class MealConsumptionsService {
       if (err.message === 'Saldo esgotado') {
         throw new BadRequestException('Saldo mensal esgotado');
       }
-      throw new NotFoundException('Saldo mensal não configurado. Contate o gerente.');
+      throw new BadRequestException(`Saldo mensal não configurado para ${String(now.getMonth() + 1).padStart(2,'0')}/${now.getFullYear()}. Contate o gerente.`);
     }
 
     // 6. Registra consumo
@@ -89,11 +89,8 @@ export class MealConsumptionsService {
 
   // ─── REGISTRO VIA FISCAL (scan do crachá) ────────────────────────────
   async registerByFiscal(fiscalId: string, fiscalTenantId: string, targetUserId: string, notes?: string) {
-    // 1. Busca e valida o usuário pelo token QR
+    // 1. Busca e valida o usuário (verifica se existe, está ativo e tem QR Code)
     const targetUser = await this.usersService.findByQrTokenForFiscal(targetUserId);
-    if (!targetUser) {
-      throw new BadRequestException('QR Code inválido ou usuário não encontrado');
-    }
 
     // 2. Verifica que o funcionário pertence ao mesmo tenant do FISCAL
     if (targetUser.tenantId !== fiscalTenantId) {
@@ -133,9 +130,12 @@ export class MealConsumptionsService {
       await this.allowancesService.incrementConsumed(targetUserId, now.getFullYear(), now.getMonth() + 1);
     } catch (err) {
       if (err.message === 'Saldo esgotado') {
-        throw new BadRequestException(`Saldo mensal de ${targetUser.name} está esgotado`);
+        throw new BadRequestException(`Saldo de ${targetUser.name} está esgotado para este mês`);
       }
-      throw new BadRequestException('Saldo mensal não configurado. Contate o gerente.');
+      // Saldo não configurado para este mês
+      throw new BadRequestException(
+        `Saldo de ${targetUser.name} não foi configurado para ${String(now.getMonth() + 1).padStart(2,'0')}/${now.getFullYear()}. Contate o gerente.`
+      );
     }
 
     // 6. Registra consumo

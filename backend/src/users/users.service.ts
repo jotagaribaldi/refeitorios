@@ -1,5 +1,5 @@
 import {
-  Injectable, NotFoundException, ConflictException, ForbiddenException,
+  Injectable, NotFoundException, ConflictException, ForbiddenException, BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
@@ -186,10 +186,13 @@ export class UsersService {
 
   async findByQrTokenForFiscal(userId: string) {
     const user = await this.repo.findOne({
-      where: { id: userId, isActive: true },
+      where: { id: userId },
       relations: ['tenant'],
     });
     if (!user) throw new NotFoundException('Funcionário não encontrado');
+    if (!user.isActive) {
+      throw new BadRequestException(`Funcionário ${user.name} está inativo e não pode utilizar o refeitório`);
+    }
     if (!user.qrCodeToken) {
       throw new NotFoundException('Funcionário não possui QR Code');
     }
