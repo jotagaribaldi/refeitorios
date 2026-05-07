@@ -92,7 +92,7 @@ let UsersService = class UsersService {
             throw new common_1.ConflictException('Email já cadastrado');
         const { password, allowedRestaurantIds, ...rest } = dto;
         const passwordHash = await bcrypt.hash(password, 10);
-        const qrCodeToken = (dto.role === user_entity_1.UserRole.FUNCIONARIO || dto.role === user_entity_1.UserRole.FISCAL)
+        const qrCodeToken = (dto.role === user_entity_1.UserRole.FUNCIONARIO || dto.role === user_entity_1.UserRole.FISCAL || dto.role === user_entity_1.UserRole.GERENTE)
             ? (0, uuid_1.v4)()
             : null;
         const user = this.repo.create({ ...rest, passwordHash, qrCodeToken });

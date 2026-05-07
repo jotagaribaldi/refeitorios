@@ -12,28 +12,28 @@ export class MealConsumption {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ name: 'tenant_id' })
   tenantId: string;
 
   @ManyToOne(() => Tenant, (t) => t.consumptions, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
   tenant: Tenant;
 
-  @Column()
+  @Column({ name: 'user_id' })
   userId: string;
 
   @ManyToOne(() => User, (u) => u.consumptions)
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column()
+  @Column({ name: 'restaurant_id' })
   restaurantId: string;
 
   @ManyToOne(() => Restaurant, (r) => r.consumptions)
   @JoinColumn({ name: 'restaurant_id' })
   restaurant: Restaurant;
 
-  @Column()
+  @Column({ name: 'meal_type_id' })
   mealTypeId: string;
 
   @ManyToOne(() => MealType, (m) => m.consumptions)

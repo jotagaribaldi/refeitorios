@@ -92,9 +92,20 @@ export default function ScanFiscalPage({ onBack }: ScanFiscalPageProps) {
       }
     } catch (err: any) {
       if (mountedRef.current) {
+        let errorMessage = 'Erro ao registrar consumo. Tente novamente.';
+        
+        if (err.response?.status === 500) {
+          errorMessage = 'Erro interno no servidor. O consumo não pôde ser processado no momento.';
+        } else if (err.response?.data?.message) {
+          const msg = err.response.data.message;
+          errorMessage = Array.isArray(msg) ? msg.join(', ') : msg;
+        } else if (err.message) {
+          errorMessage = err.message;
+        }
+
         setResult({
           type: 'error',
-          message: err.response?.data?.message || 'Erro ao registrar consumo. Tente novamente.',
+          message: errorMessage,
         });
       }
     }

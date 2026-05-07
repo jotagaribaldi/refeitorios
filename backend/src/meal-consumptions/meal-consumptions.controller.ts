@@ -25,7 +25,7 @@ export class MealConsumptionsController {
   // FISCAL escaneia o QR Code do crachá do funcionário e registra o consumo
   @Post('scan')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.FISCAL)
+  @Roles(UserRole.FISCAL, UserRole.GERENTE)
   scanEmployee(@Body() dto: ScanUserQrDto, @Request() req: any) {
     return this.service.registerByFiscal(req.user.id, req.user.tenantId, dto.userId, dto.notes);
   }

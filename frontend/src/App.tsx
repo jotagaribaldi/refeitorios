@@ -72,7 +72,7 @@ function AppRoutes() {
       } />
 
       <Route path="/meal-types" element={
-        <ProtectedRoute roles={['ROOT', 'GERENTE']}>
+        <ProtectedRoute roles={['GERENTE']}>
           <AppLayout><MealTypesPage /></AppLayout>
         </ProtectedRoute>
       } />

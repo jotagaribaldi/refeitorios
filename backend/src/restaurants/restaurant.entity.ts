@@ -10,7 +10,7 @@ export class Restaurant {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ name: 'tenant_id' })
   tenantId: string;
 
   @ManyToOne(() => Tenant, (t) => t.restaurants, { onDelete: 'CASCADE' })

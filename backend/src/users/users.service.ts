@@ -52,7 +52,7 @@ export class UsersService {
 
     const { password, allowedRestaurantIds, ...rest } = dto;
     const passwordHash = await bcrypt.hash(password, 10);
-    const qrCodeToken = (dto.role === UserRole.FUNCIONARIO || dto.role === UserRole.FISCAL)
+    const qrCodeToken = (dto.role === UserRole.FUNCIONARIO || dto.role === UserRole.FISCAL || dto.role === UserRole.GERENTE)
       ? uuidv4()
       : null;
     const user = this.repo.create({ ...rest, passwordHash, qrCodeToken });

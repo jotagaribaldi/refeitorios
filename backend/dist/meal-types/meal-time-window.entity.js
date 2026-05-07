@@ -33,7 +33,7 @@ __decorate([
     __metadata("design:type", String)
 ], MealTimeWindow.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'tenant_id' }),
     __metadata("design:type", String)
 ], MealTimeWindow.prototype, "tenantId", void 0);
 __decorate([
@@ -42,7 +42,7 @@ __decorate([
     __metadata("design:type", tenant_entity_1.Tenant)
 ], MealTimeWindow.prototype, "tenant", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'restaurant_id' }),
     __metadata("design:type", String)
 ], MealTimeWindow.prototype, "restaurantId", void 0);
 __decorate([
@@ -51,7 +51,7 @@ __decorate([
     __metadata("design:type", restaurant_entity_1.Restaurant)
 ], MealTimeWindow.prototype, "restaurant", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'meal_type_id' }),
     __metadata("design:type", String)
 ], MealTimeWindow.prototype, "mealTypeId", void 0);
 __decorate([
@@ -72,7 +72,7 @@ __decorate([
     __metadata("design:type", Boolean)
 ], MealTimeWindow.prototype, "allowDuplicate", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ default: true }),
+    (0, typeorm_1.Column)({ name: 'isActive', default: true }),
     __metadata("design:type", Boolean)
 ], MealTimeWindow.prototype, "isActive", void 0);
 exports.MealTimeWindow = MealTimeWindow = __decorate([

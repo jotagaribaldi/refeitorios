@@ -11,21 +11,21 @@ export class MealTimeWindow {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ name: 'tenant_id' })
   tenantId: string;
 
   @ManyToOne(() => Tenant, (t) => t.mealTimeWindows, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
   tenant: Tenant;
 
-  @Column()
+  @Column({ name: 'restaurant_id' })
   restaurantId: string;
 
   @ManyToOne(() => Restaurant, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'restaurant_id' })
   restaurant: Restaurant;
 
-  @Column()
+  @Column({ name: 'meal_type_id' })
   mealTypeId: string;
 
   @ManyToOne(() => MealType, (m) => m.timeWindows)
@@ -41,6 +41,6 @@ export class MealTimeWindow {
   @Column({ name: 'allow_duplicate', default: false })
   allowDuplicate: boolean;
 
-  @Column({ default: true })
+  @Column({ name: 'isActive', default: true })
   isActive: boolean;
 }

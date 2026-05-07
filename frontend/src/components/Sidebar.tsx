@@ -15,7 +15,7 @@ const navItems: NavItem[] = [
   { to: '/users', icon: '👥', label: 'Funcionários', roles: ['ROOT', 'GERENTE'] },
   { to: '/allowances', icon: '💰', label: 'Saldos', roles: ['ROOT', 'GERENTE'] },
   { to: '/consumptions', icon: '📋', label: 'Consumos', roles: ['ROOT', 'GERENTE'] },
-  { to: '/meal-types', icon: '⏰', label: 'Tipos de Refeição', roles: ['ROOT', 'GERENTE'] },
+  { to: '/meal-types', icon: '⏰', label: 'Tipos de Refeição', roles: ['GERENTE'] },
   { to: '/scan', icon: '📲', label: 'Escanear QR', roles: ['FUNCIONARIO'] },
   { to: '/my-consumptions', icon: '📋', label: 'Meus Consumos', roles: ['FUNCIONARIO'] },
 ];

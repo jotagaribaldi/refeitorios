@@ -33,7 +33,8 @@ export default function AllowancesPage() {
       api.get('/users'),
     ]).then(([a, u]) => {
       setAllowances(a.data);
-      setUsers(u.data.filter((u: any) => u.role === 'FUNCIONARIO' && u.isActive));
+      const allowedRoles = ['FUNCIONARIO', 'FISCAL', 'GERENTE'];
+      setUsers(u.data.filter((u: any) => allowedRoles.includes(u.role) && u.isActive));
     }).catch(console.error).finally(() => setLoading(false));
   };
 

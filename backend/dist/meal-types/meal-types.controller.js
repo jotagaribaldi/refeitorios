@@ -46,7 +46,7 @@ let MealTypesController = class MealTypesController {
 exports.MealTypesController = MealTypesController;
 __decorate([
     (0, common_1.Get)(),
-    (0, roles_guard_1.Roles)(user_entity_1.UserRole.ROOT, user_entity_1.UserRole.GERENTE),
+    (0, roles_guard_1.Roles)(user_entity_1.UserRole.GERENTE),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -54,7 +54,7 @@ __decorate([
 ], MealTypesController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Post)(),
-    (0, roles_guard_1.Roles)(user_entity_1.UserRole.GERENTE, user_entity_1.UserRole.ROOT),
+    (0, roles_guard_1.Roles)(user_entity_1.UserRole.GERENTE),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -63,7 +63,7 @@ __decorate([
 ], MealTypesController.prototype, "create", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    (0, roles_guard_1.Roles)(user_entity_1.UserRole.GERENTE, user_entity_1.UserRole.ROOT),
+    (0, roles_guard_1.Roles)(user_entity_1.UserRole.GERENTE),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -72,7 +72,7 @@ __decorate([
 ], MealTypesController.prototype, "remove", null);
 __decorate([
     (0, common_1.Get)('time-windows'),
-    (0, roles_guard_1.Roles)(user_entity_1.UserRole.ROOT, user_entity_1.UserRole.GERENTE),
+    (0, roles_guard_1.Roles)(user_entity_1.UserRole.GERENTE),
     __param(0, (0, common_1.Query)('restaurantId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -80,7 +80,7 @@ __decorate([
 ], MealTypesController.prototype, "getWindows", null);
 __decorate([
     (0, common_1.Put)('time-windows'),
-    (0, roles_guard_1.Roles)(user_entity_1.UserRole.GERENTE, user_entity_1.UserRole.ROOT),
+    (0, roles_guard_1.Roles)(user_entity_1.UserRole.GERENTE),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),

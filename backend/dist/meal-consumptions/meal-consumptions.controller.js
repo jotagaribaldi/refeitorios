@@ -56,7 +56,7 @@ exports.MealConsumptionsController = MealConsumptionsController;
 __decorate([
     (0, common_1.Post)('scan'),
     (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
-    (0, roles_guard_1.Roles)(user_entity_1.UserRole.FISCAL),
+    (0, roles_guard_1.Roles)(user_entity_1.UserRole.FISCAL, user_entity_1.UserRole.GERENTE),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),

@@ -30,7 +30,7 @@ __decorate([
     __metadata("design:type", String)
 ], Restaurant.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'tenant_id' }),
     __metadata("design:type", String)
 ], Restaurant.prototype, "tenantId", void 0);
 __decorate([

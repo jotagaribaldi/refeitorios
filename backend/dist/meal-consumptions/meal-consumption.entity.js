@@ -36,7 +36,7 @@ __decorate([
     __metadata("design:type", String)
 ], MealConsumption.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'tenant_id' }),
     __metadata("design:type", String)
 ], MealConsumption.prototype, "tenantId", void 0);
 __decorate([
@@ -45,7 +45,7 @@ __decorate([
     __metadata("design:type", tenant_entity_1.Tenant)
 ], MealConsumption.prototype, "tenant", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'user_id' }),
     __metadata("design:type", String)
 ], MealConsumption.prototype, "userId", void 0);
 __decorate([
@@ -54,7 +54,7 @@ __decorate([
     __metadata("design:type", user_entity_1.User)
 ], MealConsumption.prototype, "user", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'restaurant_id' }),
     __metadata("design:type", String)
 ], MealConsumption.prototype, "restaurantId", void 0);
 __decorate([
@@ -63,7 +63,7 @@ __decorate([
     __metadata("design:type", restaurant_entity_1.Restaurant)
 ], MealConsumption.prototype, "restaurant", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'meal_type_id' }),
     __metadata("design:type", String)
 ], MealConsumption.prototype, "mealTypeId", void 0);
 __decorate([
