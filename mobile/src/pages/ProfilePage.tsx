@@ -41,7 +41,7 @@ export default function ProfilePage() {
       {/* Hero */}
       <div className="profile-hero">
         <div className="profile-avatar">
-          {user?.name?.charAt(0).toUpperCase()}
+          {(user?.name?.charAt(0) || 'U').toUpperCase()}
         </div>
         <div className="profile-name">{user?.name}</div>
         <div className="profile-email">{user?.email}</div>

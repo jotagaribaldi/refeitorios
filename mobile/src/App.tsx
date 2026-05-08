@@ -60,7 +60,7 @@ function AppShell() {
         </span>
         <div className="status-right">
           <div className="avatar-sm" onClick={() => setTab('profile')}>
-            {user?.name?.charAt(0).toUpperCase()}
+            {(user?.name?.charAt(0) || 'U').toUpperCase()}
           </div>
         </div>
       </div>
