@@ -25,7 +25,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
 function HomeRedirect() {
   const { user } = useAuth();
-  if (user?.role === 'FUNCIONARIO') return <Navigate to="/scan" replace />;
+  if (user?.role === 'FUNCIONARIO' || user?.role === 'FISCAL') return <Navigate to="/scan" replace />;
   return <Navigate to="/dashboard" replace />;
 }
 
@@ -78,7 +78,7 @@ function AppRoutes() {
       } />
 
       <Route path="/scan" element={
-        <ProtectedRoute roles={['FUNCIONARIO']}>
+        <ProtectedRoute roles={['FUNCIONARIO', 'FISCAL', 'GERENTE']}>
           <AppLayout><ScanPage /></AppLayout>
         </ProtectedRoute>
       } />

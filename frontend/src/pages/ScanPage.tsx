@@ -42,17 +42,26 @@ export default function ScanPage() {
     setLoading(true);
     setResult(null);
     try {
-      let token = raw;
+      let userId = raw;
       try {
         const parsed = JSON.parse(raw);
-        token = parsed.token;
+        userId = parsed.userId || raw;
       } catch {}
 
-      const { data } = await api.post('/consumptions', { qrCodeToken: token });
+      const { data } = await api.post('/consumptions/scan', { userId });
       setLastMeal(data);
       setResult({ type: 'success', msg: 'Refeição registrada com sucesso! ✅' });
     } catch (err: any) {
-      setResult({ type: 'error', msg: err.response?.data?.message || 'Erro ao registrar consumo' });
+      let errorMessage = 'Erro ao registrar consumo';
+      if (err.response?.status === 500) {
+        errorMessage = 'Erro interno no servidor.';
+      } else if (err.response?.data?.message) {
+        const msg = err.response.data.message;
+        errorMessage = Array.isArray(msg) ? msg.join(', ') : msg;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      setResult({ type: 'error', msg: errorMessage });
     } finally {
       setLoading(false);
     }

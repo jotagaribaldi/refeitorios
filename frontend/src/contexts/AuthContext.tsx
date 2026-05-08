@@ -5,7 +5,7 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: 'ROOT' | 'GERENTE' | 'FUNCIONARIO';
+  role: 'ROOT' | 'GERENTE' | 'FUNCIONARIO' | 'FISCAL';
   tenantId?: string;
   tenant?: { name: string };
 }

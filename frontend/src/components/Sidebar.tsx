@@ -16,7 +16,7 @@ const navItems: NavItem[] = [
   { to: '/allowances', icon: '💰', label: 'Saldos', roles: ['ROOT', 'GERENTE'] },
   { to: '/consumptions', icon: '📋', label: 'Consumos', roles: ['ROOT', 'GERENTE'] },
   { to: '/meal-types', icon: '⏰', label: 'Tipos de Refeição', roles: ['GERENTE'] },
-  { to: '/scan', icon: '📲', label: 'Escanear QR', roles: ['FUNCIONARIO'] },
+  { to: '/scan', icon: '📲', label: 'Escanear QR', roles: ['FUNCIONARIO', 'FISCAL', 'GERENTE'] },
   { to: '/my-consumptions', icon: '📋', label: 'Meus Consumos', roles: ['FUNCIONARIO'] },
 ];
 
@@ -53,7 +53,7 @@ export default function Sidebar() {
       <div className="sidebar-footer">
         <div className="user-badge">
           <div className="user-avatar">
-            {user?.name?.charAt(0).toUpperCase()}
+            {(user?.name?.charAt(0) || 'U').toUpperCase()}
           </div>
           <div className="user-info">
             <div className="user-name">{user?.name}</div>
