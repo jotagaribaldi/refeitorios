@@ -79,7 +79,12 @@ export class MealTypesService {
 
   async getCurrentMealWindow(restaurantId: string) {
     const now = new Date();
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const currentTime = new Intl.DateTimeFormat('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).format(now);
 
     console.log(`[getCurrentMealWindow] restaurantId: ${restaurantId}, currentTime: ${currentTime}`);
 
@@ -99,7 +104,12 @@ export class MealTypesService {
 
   async getCurrentMealWindowForTenant(tenantId: string, allowedRestaurantIds: string[]) {
     const now = new Date();
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const currentTime = new Intl.DateTimeFormat('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).format(now);
 
     console.log(`[getCurrentMealWindowForTenant] tenantId: ${tenantId}, allowedIds: ${allowedRestaurantIds}, currentTime: ${currentTime}`);
 

@@ -48,7 +48,7 @@ let MealConsumptionsService = class MealConsumptionsService {
             throw new common_1.BadRequestException('Nenhuma refeição disponível neste horário');
         }
         if (!currentWindow.allowDuplicate) {
-            const today = new Date().toISOString().split('T')[0];
+            const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
             const duplicate = await this.repo.findOne({
                 where: {
                     userId,
@@ -76,7 +76,7 @@ let MealConsumptionsService = class MealConsumptionsService {
             restaurantId: currentWindow.restaurantId,
             mealTypeId: currentWindow.mealTypeId,
             consumedAt: now,
-            date: now.toISOString().split('T')[0],
+            date: now.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }),
             notes: dto.notes,
         });
         const saved = await this.repo.save(consumption);
@@ -96,7 +96,7 @@ let MealConsumptionsService = class MealConsumptionsService {
             throw new common_1.BadRequestException('Nenhuma refeição disponível neste horário');
         }
         if (!currentWindow.allowDuplicate) {
-            const today = new Date().toISOString().split('T')[0];
+            const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
             const duplicate = await this.repo.findOne({
                 where: {
                     userId: targetUserId,
@@ -124,7 +124,7 @@ let MealConsumptionsService = class MealConsumptionsService {
             restaurantId: currentWindow.restaurantId,
             mealTypeId: currentWindow.mealTypeId,
             consumedAt: now,
-            date: now.toISOString().split('T')[0],
+            date: now.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }),
             notes,
         });
         const saved = await this.repo.save(consumption);

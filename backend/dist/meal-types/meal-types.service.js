@@ -78,7 +78,12 @@ let MealTypesService = class MealTypesService {
     }
     async getCurrentMealWindow(restaurantId) {
         const now = new Date();
-        const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        const currentTime = new Intl.DateTimeFormat('pt-BR', {
+            timeZone: 'America/Sao_Paulo',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        }).format(now);
         console.log(`[getCurrentMealWindow] restaurantId: ${restaurantId}, currentTime: ${currentTime}`);
         const windows = await this.windowsRepo.find({
             where: { restaurantId, isActive: true },
@@ -93,7 +98,12 @@ let MealTypesService = class MealTypesService {
     }
     async getCurrentMealWindowForTenant(tenantId, allowedRestaurantIds) {
         const now = new Date();
-        const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        const currentTime = new Intl.DateTimeFormat('pt-BR', {
+            timeZone: 'America/Sao_Paulo',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        }).format(now);
         console.log(`[getCurrentMealWindowForTenant] tenantId: ${tenantId}, allowedIds: ${allowedRestaurantIds}, currentTime: ${currentTime}`);
         const qb = this.windowsRepo.createQueryBuilder('w')
             .leftJoinAndSelect('w.mealType', 'mealType')
