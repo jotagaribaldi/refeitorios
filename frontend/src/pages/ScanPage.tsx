@@ -1,56 +1,45 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import api from '../services/api';
 
+type ScanMode = 'hid' | 'camera' | 'manual';
+
 export default function ScanPage() {
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
-  const [scanning, setScanning] = useState(false);
+  const [scanMode, setScanMode] = useState<ScanMode>('hid');
   const [result, setResult] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const [lastMeal, setLastMeal] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [manualToken, setManualToken] = useState('');
 
-  const startScanner = () => {
-    setScanning(true);
-    setResult(null);
-    setTimeout(() => {
-      const scanner = new Html5QrcodeScanner(
-        'qr-reader',
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        false,
-      );
-      scanner.render(
-        (decodedText) => {
-          scanner.clear();
-          setScanning(false);
-          handleQrResult(decodedText);
-        },
-        (err) => console.debug(err),
-      );
-      scannerRef.current = scanner;
-    }, 100);
-  };
+  // ── HID Barcode Scanner state ──
+  const hidBufferRef = useRef('');
+  const hidTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [hidReady, setHidReady] = useState(true);
+  const [lastScanTime, setLastScanTime] = useState<Date | null>(null);
+  const [scanCount, setScanCount] = useState(0);
 
-  const stopScanner = () => {
-    scannerRef.current?.clear();
-    setScanning(false);
-  };
+  // ── Process scanned QR result ──
+  const handleQrResult = useCallback(async (raw: string) => {
+    const trimmed = raw.trim();
+    if (!trimmed) return;
 
-  const handleQrResult = async (raw: string) => {
     setLoading(true);
     setResult(null);
     try {
-      let userId = raw;
+      let userId = trimmed;
       try {
-        const parsed = JSON.parse(raw);
-        userId = parsed.userId || raw;
+        const parsed = JSON.parse(trimmed);
+        userId = parsed.userId || trimmed;
       } catch {}
 
       const { data } = await api.post('/consumptions/scan', { userId });
       setLastMeal(data);
       setResult({ type: 'success', msg: 'Refeição registrada com sucesso! ✅' });
+      setLastScanTime(new Date());
+      setScanCount((c) => c + 1);
     } catch (err: any) {
       let errorMessage = 'Erro ao registrar consumo';
       if (err.response?.status === 500) {
@@ -65,76 +54,253 @@ export default function ScanPage() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // ── HID Keyboard listener ──
+  // Bematech/Elgin BR520 simulates keyboard input and sends Enter at the end.
+  // Characters arrive in rapid succession (<50ms between keystrokes).
+  // We use a buffer + timer approach to distinguish scanner input from human typing.
+  useEffect(() => {
+    if (scanMode !== 'hid') return;
+
+    const HID_MAX_CHAR_INTERVAL = 80; // ms – scanner types much faster than humans
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if a text input/textarea is focused (manual input mode)
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+
+      // Prevent default for scanner characters to avoid any side effects
+      if (e.key === 'Enter') {
+        if (hidBufferRef.current.length > 0) {
+          e.preventDefault();
+          const scannedValue = hidBufferRef.current;
+          hidBufferRef.current = '';
+          if (hidTimerRef.current) clearTimeout(hidTimerRef.current);
+          handleQrResult(scannedValue);
+        }
+        return;
+      }
+
+      // Only accept printable characters
+      if (e.key.length === 1) {
+        e.preventDefault();
+        hidBufferRef.current += e.key;
+
+        // Reset the timer – if no character comes within the interval, flush buffer
+        if (hidTimerRef.current) clearTimeout(hidTimerRef.current);
+        hidTimerRef.current = setTimeout(() => {
+          // If we accumulated a reasonable amount of characters, treat as scan
+          if (hidBufferRef.current.length >= 3) {
+            handleQrResult(hidBufferRef.current);
+          }
+          hidBufferRef.current = '';
+        }, HID_MAX_CHAR_INTERVAL);
+      }
+    };
+
+    setHidReady(true);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (hidTimerRef.current) clearTimeout(hidTimerRef.current);
+      hidBufferRef.current = '';
+    };
+  }, [scanMode, handleQrResult]);
+
+  // ── Camera scanner controls ──
+  const startCamera = () => {
+    setScanMode('camera');
+    setResult(null);
+    setTimeout(() => {
+      const scanner = new Html5QrcodeScanner(
+        'qr-reader',
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        false,
+      );
+      scanner.render(
+        (decodedText) => {
+          scanner.clear();
+          setScanMode('hid');
+          handleQrResult(decodedText);
+        },
+        (err) => console.debug(err),
+      );
+      scannerRef.current = scanner;
+    }, 100);
+  };
+
+  const stopCamera = () => {
+    scannerRef.current?.clear();
+    setScanMode('hid');
   };
 
   useEffect(() => () => { scannerRef.current?.clear(); }, []);
 
+  // ── Auto-clear result after 5 seconds ──
+  useEffect(() => {
+    if (!result) return;
+    const timer = setTimeout(() => {
+      setResult(null);
+      setLastMeal(null);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [result]);
+
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">📲 Escanear QR Code</h1>
-        <p className="page-subtitle">Aponte a câmera para o QR Code do refeitório</p>
+        <h1 className="page-title">📲 Registro de Refeições</h1>
+        <p className="page-subtitle">
+          Utilize o leitor de QR Code ou a câmera para registrar consumos
+        </p>
       </div>
 
-      <div style={{ maxWidth: 500, margin: '0 auto' }}>
+      <div style={{ maxWidth: 600, margin: '0 auto' }}>
+
+        {/* ── Scan Mode Tabs ── */}
+        <div className="scan-mode-tabs">
+          <button
+            className={`scan-mode-tab ${scanMode === 'hid' ? 'active' : ''}`}
+            onClick={() => { stopCamera(); setScanMode('hid'); }}
+          >
+            <span className="scan-mode-tab-icon">🔌</span>
+            <span>Leitor USB</span>
+          </button>
+          <button
+            className={`scan-mode-tab ${scanMode === 'camera' ? 'active' : ''}`}
+            onClick={() => startCamera()}
+          >
+            <span className="scan-mode-tab-icon">📷</span>
+            <span>Câmera</span>
+          </button>
+          <button
+            className={`scan-mode-tab ${scanMode === 'manual' ? 'active' : ''}`}
+            onClick={() => { stopCamera(); setScanMode('manual'); }}
+          >
+            <span className="scan-mode-tab-icon">⌨️</span>
+            <span>Manual</span>
+          </button>
+        </div>
+
+        {/* ── Result Feedback ── */}
         {result && (
-          <div className={`alert alert-${result.type === 'success' ? 'success' : 'error'}`}>
-            {result.msg}
-          </div>
-        )}
-
-        {lastMeal && (
-          <div className="card" style={{ marginBottom: 20, textAlign: 'center' }}>
-            <div style={{ fontSize: 40, marginBottom: 8 }}>✅</div>
-            <div className="fw-700" style={{ fontSize: 18, marginBottom: 4 }}>
-              Consumo Registrado
+          <div
+            className={`scan-result-banner ${result.type === 'success' ? 'scan-result-success' : 'scan-result-error'}`}
+          >
+            <div className="scan-result-icon">
+              {result.type === 'success' ? '✅' : '❌'}
             </div>
-            <div className="text-muted text-sm">
-              {format(new Date(lastMeal.consumedAt), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+            <div className="scan-result-text">{result.msg}</div>
+            {lastMeal && result.type === 'success' && (
+              <div className="scan-result-detail">
+                {format(new Date(lastMeal.consumedAt), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── HID Scanner Mode ── */}
+        {scanMode === 'hid' && (
+          <div className="card scan-hid-card">
+            <div className="scan-hid-visual">
+              <div className={`scan-hid-ring ${loading ? 'processing' : 'listening'}`}>
+                <div className="scan-hid-ring-inner">
+                  <span className="scan-hid-icon">{loading ? '⏳' : '🔌'}</span>
+                </div>
+              </div>
+              <div className="scan-hid-status">
+                {loading ? (
+                  <>
+                    <span className="scan-hid-status-label processing">Processando...</span>
+                    <span className="scan-hid-status-sub">Registrando consumo no sistema</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="scan-hid-status-label listening">
+                      <span className="scan-hid-dot" />
+                      Aguardando leitura
+                    </span>
+                    <span className="scan-hid-status-sub">
+                      Aponte o leitor para o QR Code do crachá
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
+
+            <div className="scan-hid-device-info">
+              <div className="scan-hid-device-badge">
+                <span>🔌</span>
+                <span>Leitor HID USB</span>
+                <span className="badge badge-green" style={{ marginLeft: 'auto' }}>Ativo</span>
+              </div>
+              <p className="scan-hid-device-hint">
+                Bematech / Elgin BR520 — Dispositivo de teclado USB (HID Keyboard Device).
+                <br />O leitor enviará os dados automaticamente ao escanear um QR Code.
+              </p>
+            </div>
+
+            {scanCount > 0 && (
+              <div className="scan-hid-stats">
+                <div className="scan-hid-stat">
+                  <span className="scan-hid-stat-value">{scanCount}</span>
+                  <span className="scan-hid-stat-label">Leituras nesta sessão</span>
+                </div>
+                {lastScanTime && (
+                  <div className="scan-hid-stat">
+                    <span className="scan-hid-stat-value">
+                      {format(lastScanTime, 'HH:mm:ss')}
+                    </span>
+                    <span className="scan-hid-stat-label">Última leitura</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
-        {!scanning && (
-          <div className="card" style={{ textAlign: 'center', marginBottom: 20 }}>
-            <div style={{ fontSize: 72, marginBottom: 16 }}>📷</div>
-            <p className="text-muted" style={{ marginBottom: 20 }}>
-              Clique no botão abaixo para iniciar a câmera e escanear o QR Code do refeitório.
-            </p>
-            <button className="btn btn-primary btn-lg" onClick={startScanner} disabled={loading}>
-              {loading ? 'Processando...' : '📷 Iniciar Scanner'}
-            </button>
-          </div>
-        )}
-
-        {scanning && (
+        {/* ── Camera Mode ── */}
+        {scanMode === 'camera' && (
           <div className="card" style={{ marginBottom: 20 }}>
             <div id="qr-reader" />
             <div style={{ textAlign: 'center', marginTop: 16 }}>
-              <button className="btn btn-danger" onClick={stopScanner}>✕ Parar</button>
+              <p className="text-muted text-sm" style={{ marginBottom: 12 }}>
+                Aponte a câmera para o QR Code do crachá
+              </p>
+              <button className="btn btn-danger" onClick={stopCamera}>
+                ✕ Parar câmera
+              </button>
             </div>
           </div>
         )}
 
-        {/* Manual input fallback */}
-        <div className="card">
-          <h3 className="card-title" style={{ marginBottom: 12 }}>🔢 Inserir token manualmente</h3>
-          <div className="form-group">
-            <label>Token do QR Code</label>
-            <input
-              value={manualToken}
-              onChange={(e) => setManualToken(e.target.value)}
-              placeholder="Cole o token aqui..."
-            />
+        {/* ── Manual Mode ── */}
+        {scanMode === 'manual' && (
+          <div className="card">
+            <h3 className="card-title" style={{ marginBottom: 12 }}>🔢 Inserir token manualmente</h3>
+            <div className="form-group">
+              <label>Token do QR Code</label>
+              <input
+                value={manualToken}
+                onChange={(e) => setManualToken(e.target.value)}
+                placeholder="Cole ou digite o token aqui..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && manualToken) handleQrResult(manualToken);
+                }}
+                autoFocus
+              />
+            </div>
+            <button
+              className="btn btn-primary"
+              onClick={() => { handleQrResult(manualToken); setManualToken(''); }}
+              disabled={!manualToken || loading}
+            >
+              {loading ? 'Processando...' : '✅ Registrar'}
+            </button>
           </div>
-          <button
-            className="btn btn-secondary"
-            onClick={() => handleQrResult(manualToken)}
-            disabled={!manualToken || loading}
-          >
-            ✅ Registrar
-          </button>
-        </div>
+        )}
       </div>
     </div>
   );
