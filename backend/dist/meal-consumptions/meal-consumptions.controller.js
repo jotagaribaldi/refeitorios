@@ -20,26 +20,26 @@ const meal_consumptions_service_1 = require("./meal-consumptions.service");
 const meal_consumption_dto_1 = require("./meal-consumption.dto");
 const roles_guard_1 = require("../auth/roles.guard");
 const user_entity_1 = require("../users/user.entity");
-class ScanUserQrDto {
-    userId;
+class ScanBarcodeDto {
+    barcodeToken;
     notes;
 }
 __decorate([
-    (0, class_validator_1.IsUUID)(),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], ScanUserQrDto.prototype, "userId", void 0);
+], ScanBarcodeDto.prototype, "barcodeToken", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], ScanUserQrDto.prototype, "notes", void 0);
+], ScanBarcodeDto.prototype, "notes", void 0);
 let MealConsumptionsController = class MealConsumptionsController {
     service;
     constructor(service) {
         this.service = service;
     }
     scanEmployee(dto, req) {
-        return this.service.registerByFiscal(req.user.id, req.user.tenantId, dto.userId, dto.notes);
+        return this.service.registerByBarcodeToken(req.user.id, req.user.tenantId, dto.barcodeToken, dto.notes);
     }
     register(dto, req) {
         return this.service.register(req.user.id, req.user.tenantId, dto);
@@ -60,7 +60,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [ScanUserQrDto, Object]),
+    __metadata("design:paramtypes", [ScanBarcodeDto, Object]),
     __metadata("design:returntype", void 0)
 ], MealConsumptionsController.prototype, "scanEmployee", null);
 __decorate([

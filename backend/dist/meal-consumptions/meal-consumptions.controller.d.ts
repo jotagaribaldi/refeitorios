@@ -1,13 +1,13 @@
 import { MealConsumptionsService } from './meal-consumptions.service';
 import { RegisterConsumptionDto } from './meal-consumption.dto';
-declare class ScanUserQrDto {
-    userId: string;
+declare class ScanBarcodeDto {
+    barcodeToken: string;
     notes?: string;
 }
 export declare class MealConsumptionsController {
     private service;
     constructor(service: MealConsumptionsService);
-    scanEmployee(dto: ScanUserQrDto, req: any): Promise<{
+    scanEmployee(dto: ScanBarcodeDto, req: any): Promise<{
         employee: {
             id: string;
             name: string;

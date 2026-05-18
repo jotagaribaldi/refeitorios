@@ -87,10 +87,25 @@ export class MealConsumptionsService {
     });
   }
 
+  // ─── REGISTRO VIA SCAN DE CÓDIGO DE BARRAS (fluxo principal do fiscal) ───
+  async registerByBarcodeToken(fiscalId: string, fiscalTenantId: string, barcodeToken: string, notes?: string) {
+    // 1. Resolve o usuário pelo token do código de barras
+    const targetUser = await this.usersService.findByBarcodeToken(barcodeToken);
+    if (!targetUser) {
+      throw new BadRequestException('Código de barras inválido ou funcionário não encontrado');
+    }
+    if (!targetUser.isActive) {
+      throw new BadRequestException(`Funcionário ${targetUser.name} está inativo e não pode utilizar o refeitório`);
+    }
+    // 2. Delega para o fluxo existente usando o userId resolvido
+    return this.registerByFiscal(fiscalId, fiscalTenantId, targetUser.id, notes);
+  }
+
   // ─── REGISTRO VIA FISCAL (scan do crachá) ────────────────────────────
   async registerByFiscal(fiscalId: string, fiscalTenantId: string, targetUserId: string, notes?: string) {
     // 1. Busca e valida o usuário (verifica se existe, está ativo e tem código de barras)
     const targetUser = await this.usersService.findByBarcodeTokenForFiscal(targetUserId);
+
 
     // 2. Verifica que o funcionário pertence ao mesmo tenant do FISCAL
     if (targetUser.tenantId !== fiscalTenantId) {

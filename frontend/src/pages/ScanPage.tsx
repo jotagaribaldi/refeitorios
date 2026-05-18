@@ -21,7 +21,7 @@ export default function ScanPage() {
   const [lastScanTime, setLastScanTime] = useState<Date | null>(null);
   const [scanCount, setScanCount] = useState(0);
 
-  // ── Process scanned QR result ──
+  // ── Process scanned barcode result ──
   const handleQrResult = useCallback(async (raw: string) => {
     const trimmed = raw.trim();
     if (!trimmed) return;
@@ -29,13 +29,7 @@ export default function ScanPage() {
     setLoading(true);
     setResult(null);
     try {
-      let userId = trimmed;
-      try {
-        const parsed = JSON.parse(trimmed);
-        userId = parsed.userId || trimmed;
-      } catch {}
-
-      const { data } = await api.post('/consumptions/scan', { userId });
+      const { data } = await api.post('/consumptions/scan', { barcodeToken: trimmed });
       setLastMeal(data);
       setResult({ type: 'success', msg: 'Refeição registrada com sucesso! ✅' });
       setLastScanTime(new Date());
@@ -55,6 +49,7 @@ export default function ScanPage() {
       setLoading(false);
     }
   }, []);
+
 
   // ── HID Keyboard listener ──
   // Bematech/Elgin BR520 simulates keyboard input and sends Enter at the end.

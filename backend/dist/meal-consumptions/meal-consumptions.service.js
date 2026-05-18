@@ -85,6 +85,16 @@ let MealConsumptionsService = class MealConsumptionsService {
             relations: ['restaurant', 'mealType', 'user'],
         });
     }
+    async registerByBarcodeToken(fiscalId, fiscalTenantId, barcodeToken, notes) {
+        const targetUser = await this.usersService.findByBarcodeToken(barcodeToken);
+        if (!targetUser) {
+            throw new common_1.BadRequestException('Código de barras inválido ou funcionário não encontrado');
+        }
+        if (!targetUser.isActive) {
+            throw new common_1.BadRequestException(`Funcionário ${targetUser.name} está inativo e não pode utilizar o refeitório`);
+        }
+        return this.registerByFiscal(fiscalId, fiscalTenantId, targetUser.id, notes);
+    }
     async registerByFiscal(fiscalId, fiscalTenantId, targetUserId, notes) {
         const targetUser = await this.usersService.findByBarcodeTokenForFiscal(targetUserId);
         if (targetUser.tenantId !== fiscalTenantId) {

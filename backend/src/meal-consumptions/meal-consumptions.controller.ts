@@ -2,15 +2,15 @@ import {
   Controller, Get, Post, Body, UseGuards, Request, Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { IsString, IsUUID, IsOptional } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 import { MealConsumptionsService } from './meal-consumptions.service';
 import { RegisterConsumptionDto } from './meal-consumption.dto';
 import { RolesGuard, Roles } from '../auth/roles.guard';
 import { UserRole } from '../users/user.entity';
 
-class ScanUserQrDto {
-  @IsUUID()
-  userId: string;
+class ScanBarcodeDto {
+  @IsString()
+  barcodeToken: string;
 
   @IsOptional()
   @IsString()
@@ -22,13 +22,14 @@ class ScanUserQrDto {
 export class MealConsumptionsController {
   constructor(private service: MealConsumptionsService) {}
 
-  // FISCAL escaneia o QR Code do crachá do funcionário e registra o consumo
+  // FISCAL escaneia o código de barras do crachá e registra o consumo
   @Post('scan')
   @UseGuards(RolesGuard)
   @Roles(UserRole.FISCAL, UserRole.GERENTE)
-  scanEmployee(@Body() dto: ScanUserQrDto, @Request() req: any) {
-    return this.service.registerByFiscal(req.user.id, req.user.tenantId, dto.userId, dto.notes);
+  scanEmployee(@Body() dto: ScanBarcodeDto, @Request() req: any) {
+    return this.service.registerByBarcodeToken(req.user.id, req.user.tenantId, dto.barcodeToken, dto.notes);
   }
+
 
   // Funcionário escaneia QR e registra consumo (legado - mantido por compatibilidade)
   @Post()
