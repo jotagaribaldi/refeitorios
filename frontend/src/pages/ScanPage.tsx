@@ -63,12 +63,15 @@ export default function ScanPage() {
   useEffect(() => {
     if (scanMode !== 'hid') return;
 
-    const HID_MAX_CHAR_INTERVAL = 80; // ms – scanner types much faster than humans
+    const HID_MAX_CHAR_INTERVAL = 300; // ms – increased to accommodate slower scanners/system lag
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if a text input/textarea is focused (manual input mode)
       const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+
+      // Ignore browser shortcuts
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
 
       // Prevent default for scanner characters to avoid any side effects
       if (e.key === 'Enter') {
@@ -86,17 +89,17 @@ export default function ScanPage() {
       if (e.key.length === 1) {
         e.preventDefault();
         hidBufferRef.current += e.key;
-
-        // Reset the timer – if no character comes within the interval, flush buffer
-        if (hidTimerRef.current) clearTimeout(hidTimerRef.current);
-        hidTimerRef.current = setTimeout(() => {
-          // If we accumulated a reasonable amount of characters, treat as scan
-          if (hidBufferRef.current.length >= 3) {
-            handleQrResult(hidBufferRef.current);
-          }
-          hidBufferRef.current = '';
-        }, HID_MAX_CHAR_INTERVAL);
       }
+
+      // Reset the timer on ANY keystroke (including Shift) to keep the scan window open
+      if (hidTimerRef.current) clearTimeout(hidTimerRef.current);
+      hidTimerRef.current = setTimeout(() => {
+        // If we accumulated a reasonable amount of characters, treat as scan
+        if (hidBufferRef.current.length >= 3) {
+          handleQrResult(hidBufferRef.current);
+        }
+        hidBufferRef.current = '';
+      }, HID_MAX_CHAR_INTERVAL);
     };
 
     setHidReady(true);
