@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import JsBarcode from 'jsbarcode';
+import { useState } from 'react';
+import { encodeCode128B } from '../utils/barcode';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 
@@ -11,28 +11,29 @@ interface BarcodeData {
   tenantName: string;
 }
 
-// Renderiza o código de barras Code128 num SVG
+// Renderiza código de barras Code 128 B como SVG puro (sem dependências externas)
 function BarcodeSvg({ value }: { value: string }) {
-  const svgRef = useRef<SVGSVGElement>(null);
+  let bars: { x: number; width: number }[] = [];
+  let totalWidth = 200;
+  try {
+    const encoded = encodeCode128B(value);
+    bars = encoded.bars;
+    totalWidth = encoded.totalWidth;
+  } catch (e) {
+    console.error('Erro ao codificar barcode:', e);
+  }
 
-  useEffect(() => {
-    if (!svgRef.current || !value) return;
-    try {
-      JsBarcode(svgRef.current, value, {
-        format: 'CODE128',
-        width: 2.2,
-        height: 90,
-        displayValue: false,
-        margin: 12,
-        background: '#ffffff',
-        lineColor: '#000000',
-      });
-    } catch (e) {
-      console.error('Erro ao gerar código de barras:', e);
-    }
-  }, [value]);
-
-  return <svg ref={svgRef} style={{ width: '100%', maxWidth: 320 }} />;
+  const height = 90;
+  return (
+    <svg
+      viewBox={`0 0 ${totalWidth} ${height}`}
+      style={{ width: '100%', maxWidth: 340, height: height }}
+    >
+      {bars.map((bar, i) => (
+        <rect key={i} x={bar.x} y={0} width={bar.width} height={height} fill="#000" />
+      ))}
+    </svg>
+  );
 }
 
 export default function BadgePage() {

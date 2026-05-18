@@ -17,7 +17,7 @@ export default function ScanPage() {
   // ── HID Barcode Scanner state ──
   const hidBufferRef = useRef('');
   const hidTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [hidReady, setHidReady] = useState(true);
+
   const [lastScanTime, setLastScanTime] = useState<Date | null>(null);
   const [scanCount, setScanCount] = useState(0);
 
@@ -102,7 +102,6 @@ export default function ScanPage() {
       }, HID_MAX_CHAR_INTERVAL);
     };
 
-    setHidReady(true);
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
