@@ -1,47 +1,41 @@
-import { useEffect, useState } from 'react';
-import { encodeCode128B } from '../utils/barcode';
+import { useEffect, useRef, useState } from 'react';
+import JsBarcode from 'jsbarcode';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 const ROLES = ['GERENTE', 'FISCAL', 'FUNCIONARIO'];
 
-// Renderiza código de barras Code 128 B como SVG puro (sem dependências externas)
+// Renderiza código de barras Code 128 via JsBarcode (biblioteca testada e validada)
 function BarcodeDisplay({ value, userName, employeeCode }: { value: string; userName: string; employeeCode?: string }) {
-  let bars: { x: number; width: number }[] = [];
-  let totalWidth = 200;
-  try {
-    const encoded = encodeCode128B(value);
-    bars = encoded.bars;
-    totalWidth = encoded.totalWidth;
-  } catch (e) {
-    console.error('Erro ao codificar barcode:', e);
-  }
+  const svgRef = useRef<SVGSVGElement>(null);
 
-  const scale = 1.5;
-  const height = 80;
+  useEffect(() => {
+    if (!svgRef.current || !value) return;
+    try {
+      JsBarcode(svgRef.current, value, {
+        format: 'CODE128',
+        width: 2,
+        height: 80,
+        displayValue: false,
+        margin: 12,
+        background: '#ffffff',
+        lineColor: '#000000',
+      });
+    } catch (e) {
+      console.error('Erro ao gerar código de barras:', e);
+    }
+  }, [value]);
 
   return (
     <div style={{ textAlign: 'center' }}>
-      <svg
-        width={totalWidth * scale}
-        height={height + 30}
-        viewBox={`0 0 ${totalWidth} ${height + 30}`}
-        style={{ maxWidth: '100%' }}
-      >
-        {bars.map((bar, i) => (
-          <rect key={i} x={bar.x} y={0} width={bar.width} height={height} fill="#000" />
-        ))}
-      </svg>
-      <div style={{ marginTop: 4, fontSize: 13 }}>
+      <svg ref={svgRef} style={{ maxWidth: '100%' }} />
+      <div style={{ marginTop: 8, fontSize: 13 }}>
         <p style={{ fontWeight: 600, margin: 0 }}>{userName}</p>
         {employeeCode && (
           <p style={{ color: '#666', margin: '4px 0 0', fontSize: 12, fontFamily: 'monospace', letterSpacing: 1 }}>
             {employeeCode}
           </p>
         )}
-        <p style={{ color: '#999', margin: '2px 0 0', fontSize: 10, fontFamily: 'monospace' }}>
-          {value.slice(0, 16)}...
-        </p>
       </div>
     </div>
   );
