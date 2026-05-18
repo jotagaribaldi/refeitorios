@@ -42,7 +42,7 @@ export class User {
   employeeCode: string;
 
   @Column({ name: 'qr_code_token', type: 'varchar', length: 500, nullable: true })
-  qrCodeToken: string | null;
+  barcodeToken: string | null;
 
   @Column({ default: true })
   isActive: boolean;

@@ -22,13 +22,13 @@ export class MealConsumptionsService {
 
   // ─── REGISTRO DE CONSUMO (fluxo principal) ───────────────────────────
   async register(userId: string, tenantId: string, dto: RegisterConsumptionDto) {
-    // 1. Valida funcionário pelo token QR
-    const user = await this.usersService.findByQrToken(dto.qrCodeToken);
+    // 1. Valida funcionário pelo token de código de barras
+    const user = await this.usersService.findByBarcodeToken(dto.qrCodeToken);
     if (user.id !== userId) {
-      throw new BadRequestException('QR Code não pertence a este usuário');
+      throw new BadRequestException('Código de barras não pertence a este usuário');
     }
     if (user.tenantId !== tenantId) {
-      throw new BadRequestException('QR Code não pertence à sua empresa');
+      throw new BadRequestException('Código de barras não pertence à sua empresa');
     }
 
     // 2. Obtém lista de refeitórios permitidos
@@ -89,8 +89,8 @@ export class MealConsumptionsService {
 
   // ─── REGISTRO VIA FISCAL (scan do crachá) ────────────────────────────
   async registerByFiscal(fiscalId: string, fiscalTenantId: string, targetUserId: string, notes?: string) {
-    // 1. Busca e valida o usuário (verifica se existe, está ativo e tem QR Code)
-    const targetUser = await this.usersService.findByQrTokenForFiscal(targetUserId);
+    // 1. Busca e valida o usuário (verifica se existe, está ativo e tem código de barras)
+    const targetUser = await this.usersService.findByBarcodeTokenForFiscal(targetUserId);
 
     // 2. Verifica que o funcionário pertence ao mesmo tenant do FISCAL
     if (targetUser.tenantId !== fiscalTenantId) {

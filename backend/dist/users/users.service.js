@@ -51,7 +51,6 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const bcrypt = __importStar(require("bcryptjs"));
 const uuid_1 = require("uuid");
-const QRCode = __importStar(require("qrcode"));
 const user_entity_1 = require("./user.entity");
 const restaurant_entity_1 = require("../restaurants/restaurant.entity");
 let UsersService = class UsersService {
@@ -92,10 +91,10 @@ let UsersService = class UsersService {
             throw new common_1.ConflictException('Email já cadastrado');
         const { password, allowedRestaurantIds, ...rest } = dto;
         const passwordHash = await bcrypt.hash(password, 10);
-        const qrCodeToken = (dto.role === user_entity_1.UserRole.FUNCIONARIO || dto.role === user_entity_1.UserRole.FISCAL || dto.role === user_entity_1.UserRole.GERENTE)
+        const barcodeToken = (dto.role === user_entity_1.UserRole.FUNCIONARIO || dto.role === user_entity_1.UserRole.FISCAL || dto.role === user_entity_1.UserRole.GERENTE)
             ? (0, uuid_1.v4)()
             : null;
-        const user = this.repo.create({ ...rest, passwordHash, qrCodeToken });
+        const user = this.repo.create({ ...rest, passwordHash, barcodeToken });
         if (allowedRestaurantIds?.length && dto.role === user_entity_1.UserRole.FUNCIONARIO) {
             user.allowedRestaurants = await this.restaurantRepo.findBy({
                 id: (0, typeorm_2.In)(allowedRestaurantIds),
@@ -168,45 +167,43 @@ let UsersService = class UsersService {
             return [];
         return user.allowedRestaurants.map((r) => r.id);
     }
-    async getUserQrData(userId) {
+    async getUserBarcodeData(userId) {
         const user = await this.repo.findOne({
             where: { id: userId },
             relations: ['tenant'],
         });
         if (!user)
             throw new common_1.NotFoundException('Usuário não encontrado');
-        if (!user.qrCodeToken) {
-            user.qrCodeToken = (0, uuid_1.v4)();
+        if (!user.barcodeToken) {
+            user.barcodeToken = (0, uuid_1.v4)();
             await this.repo.save(user);
         }
-        const qrDataUrl = await QRCode.toDataURL(JSON.stringify({ userId: user.id, token: user.qrCodeToken }));
         return {
             userId: user.id,
-            qrCodeToken: user.qrCodeToken,
-            qrDataUrl,
+            barcodeToken: user.barcodeToken,
             userName: user.name,
             employeeCode: user.employeeCode,
             tenantName: user.tenant?.name || '',
         };
     }
-    async regenerateUserQr(userId) {
+    async regenerateUserBarcode(userId) {
         const user = await this.repo.findOne({ where: { id: userId } });
         if (!user)
             throw new common_1.NotFoundException('Usuário não encontrado');
-        user.qrCodeToken = (0, uuid_1.v4)();
+        user.barcodeToken = (0, uuid_1.v4)();
         await this.repo.save(user);
-        return this.getUserQrData(userId);
+        return this.getUserBarcodeData(userId);
     }
-    async findByQrToken(token) {
+    async findByBarcodeToken(token) {
         const user = await this.repo.findOne({
-            where: { qrCodeToken: token, isActive: true },
+            where: { barcodeToken: token, isActive: true },
             relations: ['tenant'],
         });
         if (!user)
-            throw new common_1.NotFoundException('QR Code inválido');
+            throw new common_1.NotFoundException('Código de barras inválido');
         return user;
     }
-    async findByQrTokenForFiscal(userId) {
+    async findByBarcodeTokenForFiscal(userId) {
         const user = await this.repo.findOne({
             where: { id: userId },
             relations: ['tenant'],
@@ -216,8 +213,8 @@ let UsersService = class UsersService {
         if (!user.isActive) {
             throw new common_1.BadRequestException(`Funcionário ${user.name} está inativo e não pode utilizar o refeitório`);
         }
-        if (!user.qrCodeToken) {
-            throw new common_1.NotFoundException('Funcionário não possui QR Code');
+        if (!user.barcodeToken) {
+            throw new common_1.NotFoundException('Funcionário não possui código de barras');
         }
         return user;
     }

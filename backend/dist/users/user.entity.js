@@ -31,7 +31,7 @@ let User = class User {
     passwordHash;
     role;
     employeeCode;
-    qrCodeToken;
+    barcodeToken;
     isActive;
     createdAt;
     updatedAt;
@@ -76,7 +76,7 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)({ name: 'qr_code_token', type: 'varchar', length: 500, nullable: true }),
     __metadata("design:type", Object)
-], User.prototype, "qrCodeToken", void 0);
+], User.prototype, "barcodeToken", void 0);
 __decorate([
     (0, typeorm_1.Column)({ default: true }),
     __metadata("design:type", Boolean)

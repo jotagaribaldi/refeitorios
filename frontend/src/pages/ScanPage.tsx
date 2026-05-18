@@ -154,9 +154,9 @@ export default function ScanPage() {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">📲 Registro de Refeições</h1>
+        <h1 className="page-title">🪪 Registro de Refeições</h1>
         <p className="page-subtitle">
-          Utilize o leitor de QR Code ou a câmera para registrar consumos
+          Utilize o leitor de código de barras ou a câmera para registrar consumos
         </p>
       </div>
 
@@ -226,7 +226,7 @@ export default function ScanPage() {
                       Aguardando leitura
                     </span>
                     <span className="scan-hid-status-sub">
-                      Aponte o leitor para o QR Code do crachá
+                      Aponte o leitor para o código de barras do crachá
                     </span>
                   </>
                 )}
@@ -236,12 +236,13 @@ export default function ScanPage() {
             <div className="scan-hid-device-info">
               <div className="scan-hid-device-badge">
                 <span>🔌</span>
-                <span>Leitor HID USB</span>
+                <span>Leitor de Código de Barras USB</span>
                 <span className="badge badge-green" style={{ marginLeft: 'auto' }}>Ativo</span>
               </div>
               <p className="scan-hid-device-hint">
-                Bematech / Elgin BR520 — Dispositivo de teclado USB (HID Keyboard Device).
-                <br />O leitor enviará os dados automaticamente ao escanear um QR Code.
+                Elgin Flash II / Bematech BR520 — Leitor USB (HID Keyboard Device).<br />
+                Compatível com códigos de barras 1D (Code 128) e QR Code.
+                <br />O leitor enviará os dados automaticamente ao escanear o crachá.
               </p>
             </div>
 
@@ -270,7 +271,7 @@ export default function ScanPage() {
             <div id="qr-reader" />
             <div style={{ textAlign: 'center', marginTop: 16 }}>
               <p className="text-muted text-sm" style={{ marginBottom: 12 }}>
-                Aponte a câmera para o QR Code do crachá
+                Aponte a câmera para o código de barras do crachá
               </p>
               <button className="btn btn-danger" onClick={stopCamera}>
                 ✕ Parar câmera

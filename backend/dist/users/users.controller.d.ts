@@ -12,7 +12,7 @@ export declare class UsersController {
         email: string;
         role: UserRole;
         employeeCode: string;
-        qrCodeToken: string | null;
+        barcodeToken: string | null;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
@@ -21,18 +21,30 @@ export declare class UsersController {
         allowedRestaurants: import("../restaurants/restaurant.entity").Restaurant[];
     }[]>;
     findOne(id: string): Promise<any>;
-    getUserQrCode(id: string, req: any): Promise<{
+    getUserBarcode(id: string, req: any): Promise<{
         userId: string;
-        qrCodeToken: string;
-        qrDataUrl: string;
+        barcodeToken: string;
         userName: string;
         employeeCode: string;
         tenantName: string;
     }>;
-    regenerateUserQr(id: string, req: any): Promise<{
+    getUserQrCodeAlias(id: string, req: any): Promise<{
         userId: string;
-        qrCodeToken: string;
-        qrDataUrl: string;
+        barcodeToken: string;
+        userName: string;
+        employeeCode: string;
+        tenantName: string;
+    }>;
+    regenerateUserBarcode(id: string, req: any): Promise<{
+        userId: string;
+        barcodeToken: string;
+        userName: string;
+        employeeCode: string;
+        tenantName: string;
+    }>;
+    regenerateUserQrAlias(id: string, req: any): Promise<{
+        userId: string;
+        barcodeToken: string;
         userName: string;
         employeeCode: string;
         tenantName: string;

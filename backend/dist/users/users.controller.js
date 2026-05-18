@@ -29,7 +29,7 @@ let UsersController = class UsersController {
         return this.service.findAll(tid);
     }
     findOne(id) { return this.service.findOne(id); }
-    async getUserQrCode(id, req) {
+    async getUserBarcode(id, req) {
         const caller = req.user;
         if (caller.role !== user_entity_1.UserRole.ROOT) {
             const target = await this.service.findOne(id);
@@ -37,9 +37,19 @@ let UsersController = class UsersController {
                 throw new common_1.ForbiddenException('Acesso negado');
             }
         }
-        return this.service.getUserQrData(id);
+        return this.service.getUserBarcodeData(id);
     }
-    async regenerateUserQr(id, req) {
+    async getUserQrCodeAlias(id, req) {
+        const caller = req.user;
+        if (caller.role !== user_entity_1.UserRole.ROOT) {
+            const target = await this.service.findOne(id);
+            if (target.tenantId !== caller.tenantId && caller.id !== id) {
+                throw new common_1.ForbiddenException('Acesso negado');
+            }
+        }
+        return this.service.getUserBarcodeData(id);
+    }
+    async regenerateUserBarcode(id, req) {
         const caller = req.user;
         if (caller.role !== user_entity_1.UserRole.ROOT) {
             const target = await this.service.findOne(id);
@@ -47,7 +57,17 @@ let UsersController = class UsersController {
                 throw new common_1.ForbiddenException('Acesso negado');
             }
         }
-        return this.service.regenerateUserQr(id);
+        return this.service.regenerateUserBarcode(id);
+    }
+    async regenerateUserQrAlias(id, req) {
+        const caller = req.user;
+        if (caller.role !== user_entity_1.UserRole.ROOT) {
+            const target = await this.service.findOne(id);
+            if (target.tenantId !== caller.tenantId) {
+                throw new common_1.ForbiddenException('Acesso negado');
+            }
+        }
+        return this.service.regenerateUserBarcode(id);
     }
     create(dto, req) {
         return this.service.create(dto, req.user);
@@ -76,13 +96,30 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "findOne", null);
 __decorate([
+    (0, common_1.Get)(':id/barcode'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getUserBarcode", null);
+__decorate([
     (0, common_1.Get)(':id/qrcode'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
-], UsersController.prototype, "getUserQrCode", null);
+], UsersController.prototype, "getUserQrCodeAlias", null);
+__decorate([
+    (0, common_1.Post)(':id/regenerate-barcode'),
+    (0, roles_guard_1.Roles)(user_entity_1.UserRole.ROOT, user_entity_1.UserRole.GERENTE),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "regenerateUserBarcode", null);
 __decorate([
     (0, common_1.Post)(':id/regenerate-qr'),
     (0, roles_guard_1.Roles)(user_entity_1.UserRole.ROOT, user_entity_1.UserRole.GERENTE),
@@ -91,7 +128,7 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
-], UsersController.prototype, "regenerateUserQr", null);
+], UsersController.prototype, "regenerateUserQrAlias", null);
 __decorate([
     (0, common_1.Post)(),
     (0, roles_guard_1.Roles)(user_entity_1.UserRole.ROOT, user_entity_1.UserRole.GERENTE),

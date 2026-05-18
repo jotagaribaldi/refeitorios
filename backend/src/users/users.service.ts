@@ -5,7 +5,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
-import * as QRCode from 'qrcode';
 import { User, UserRole } from './user.entity';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
 import { Restaurant } from '../restaurants/restaurant.entity';
@@ -52,10 +51,10 @@ export class UsersService {
 
     const { password, allowedRestaurantIds, ...rest } = dto;
     const passwordHash = await bcrypt.hash(password, 10);
-    const qrCodeToken = (dto.role === UserRole.FUNCIONARIO || dto.role === UserRole.FISCAL || dto.role === UserRole.GERENTE)
+    const barcodeToken = (dto.role === UserRole.FUNCIONARIO || dto.role === UserRole.FISCAL || dto.role === UserRole.GERENTE)
       ? uuidv4()
       : null;
-    const user = this.repo.create({ ...rest, passwordHash, qrCodeToken });
+    const user = this.repo.create({ ...rest, passwordHash, barcodeToken });
 
     // Vincula refeitórios permitidos (apenas para FUNCIONARIO)
     if (allowedRestaurantIds?.length && dto.role === UserRole.FUNCIONARIO) {
@@ -143,48 +142,44 @@ export class UsersService {
     return user.allowedRestaurants.map((r) => r.id);
   }
 
-  // Retorna os dados para gerar QR Code do funcionário
-  async getUserQrData(userId: string) {
+  // Retorna os dados para gerar código de barras do funcionário (client-side)
+  async getUserBarcodeData(userId: string) {
     const user = await this.repo.findOne({
       where: { id: userId },
       relations: ['tenant'],
     });
     if (!user) throw new NotFoundException('Usuário não encontrado');
-    if (!user.qrCodeToken) {
-      user.qrCodeToken = uuidv4();
+    if (!user.barcodeToken) {
+      user.barcodeToken = uuidv4();
       await this.repo.save(user);
     }
-    const qrDataUrl = await QRCode.toDataURL(
-      JSON.stringify({ userId: user.id, token: user.qrCodeToken }),
-    );
     return {
       userId: user.id,
-      qrCodeToken: user.qrCodeToken,
-      qrDataUrl,
+      barcodeToken: user.barcodeToken,
       userName: user.name,
       employeeCode: user.employeeCode,
       tenantName: user.tenant?.name || '',
     };
   }
 
-  async regenerateUserQr(userId: string) {
+  async regenerateUserBarcode(userId: string) {
     const user = await this.repo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('Usuário não encontrado');
-    user.qrCodeToken = uuidv4();
+    user.barcodeToken = uuidv4();
     await this.repo.save(user);
-    return this.getUserQrData(userId);
+    return this.getUserBarcodeData(userId);
   }
 
-  async findByQrToken(token: string) {
+  async findByBarcodeToken(token: string) {
     const user = await this.repo.findOne({
-      where: { qrCodeToken: token, isActive: true },
+      where: { barcodeToken: token, isActive: true },
       relations: ['tenant'],
     });
-    if (!user) throw new NotFoundException('QR Code inválido');
+    if (!user) throw new NotFoundException('Código de barras inválido');
     return user;
   }
 
-  async findByQrTokenForFiscal(userId: string) {
+  async findByBarcodeTokenForFiscal(userId: string) {
     const user = await this.repo.findOne({
       where: { id: userId },
       relations: ['tenant'],
@@ -193,8 +188,8 @@ export class UsersService {
     if (!user.isActive) {
       throw new BadRequestException(`Funcionário ${user.name} está inativo e não pode utilizar o refeitório`);
     }
-    if (!user.qrCodeToken) {
-      throw new NotFoundException('Funcionário não possui QR Code');
+    if (!user.barcodeToken) {
+      throw new NotFoundException('Funcionário não possui código de barras');
     }
     return user;
   }

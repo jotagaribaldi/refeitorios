@@ -1,8 +1,48 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import JsBarcode from 'jsbarcode';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 const ROLES = ['GERENTE', 'FISCAL', 'FUNCIONARIO'];
+
+// Componente que renderiza um código de barras Code128 num <svg>
+function BarcodeDisplay({ value, userName, employeeCode }: { value: string; userName: string; employeeCode?: string }) {
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  useEffect(() => {
+    if (!svgRef.current || !value) return;
+    try {
+      JsBarcode(svgRef.current, value, {
+        format: 'CODE128',
+        width: 2,
+        height: 80,
+        displayValue: false,
+        margin: 10,
+        background: '#ffffff',
+        lineColor: '#000000',
+      });
+    } catch (e) {
+      console.error('Erro ao gerar código de barras:', e);
+    }
+  }, [value]);
+
+  return (
+    <div style={{ textAlign: 'center' }}>
+      <svg ref={svgRef} style={{ maxWidth: '100%' }} />
+      <div style={{ marginTop: 12, fontSize: 13 }}>
+        <p style={{ fontWeight: 600, margin: 0 }}>{userName}</p>
+        {employeeCode && (
+          <p style={{ color: '#666', margin: '4px 0 0', fontSize: 12, fontFamily: 'monospace', letterSpacing: 1 }}>
+            {employeeCode}
+          </p>
+        )}
+        <p style={{ color: '#999', margin: '2px 0 0', fontSize: 10, fontFamily: 'monospace', letterSpacing: 0.5 }}>
+          {value.slice(0, 16)}...
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function UsersPage() {
   const { user: me } = useAuth();
@@ -13,9 +53,9 @@ export default function UsersPage() {
   const [restaurants, setRestaurants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [showQrModal, setShowQrModal] = useState(false);
-  const [qrUser, setQrUser] = useState<any>(null);
-  const [qrData, setQrData] = useState<any>(null);
+  const [showBarcodeModal, setShowBarcodeModal] = useState(false);
+  const [barcodeUser, setBarcodeUser] = useState<any>(null);
+  const [barcodeData, setBarcodeData] = useState<any>(null);
   const [editing, setEditing] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -67,7 +107,6 @@ export default function UsersPage() {
     setEditing(null);
     setError('');
     const defaultTenantId = isRoot ? '' : me?.tenantId || '';
-    // Para GERENTE: filtra refeitórios já carregados
     setForm({
       name: '', email: '', password: '', role: 'FUNCIONARIO',
       employeeCode: '', tenantId: defaultTenantId, allowedRestaurantIds: [],
@@ -84,7 +123,6 @@ export default function UsersPage() {
       tenantId: u.tenantId || '',
       allowedRestaurantIds: (u.allowedRestaurants || []).map((r: any) => r.id),
     });
-    // Filtra refeitórios pelo tenant do usuário editado (ROOT)
     if (isRoot && u.tenantId) {
       api.get('/restaurants').then(({ data }) => {
         setRestaurants(data.filter((r: any) => r.tenantId === u.tenantId));
@@ -138,28 +176,28 @@ export default function UsersPage() {
     }
   };
 
-  const viewQr = async (u: any) => {
-    setQrUser(u);
+  const viewBarcode = async (u: any) => {
+    setBarcodeUser(u);
+    setBarcodeData(null);
     try {
-      const { data } = await api.get(`/users/${u.id}/qrcode`);
-      setQrData(data);
+      const { data } = await api.get(`/users/${u.id}/barcode`);
+      setBarcodeData(data);
     } catch {
-      setQrData({ userName: u.name, employeeCode: u.employeeCode, qrDataUrl: null });
+      setBarcodeData({ userName: u.name, employeeCode: u.employeeCode, barcodeToken: null });
     }
-    setShowQrModal(true);
+    setShowBarcodeModal(true);
   };
 
-  const regenerateQr = async () => {
-    if (!confirm('Regenerar QR Code? O QR Code atual se tornará inválido.')) return;
-    const { data } = await api.post(`/users/${qrUser.id}/regenerate-qr`);
-    setQrData(data);
+  const regenerateBarcode = async () => {
+    if (!confirm('Regenerar código de barras? O código atual se tornará inválido.')) return;
+    const { data } = await api.post(`/users/${barcodeUser.id}/regenerate-barcode`);
+    setBarcodeData(data);
   };
 
   const roleBadge: Record<string, string> = {
     ROOT: 'badge-red', GERENTE: 'badge-amber', FUNCIONARIO: 'badge-blue',
   };
 
-  // Refeitórios disponíveis no modal (filtrando por tenantId selecionado para ROOT)
   const modalRestaurants = isRoot
     ? restaurants.filter((r) => !form.tenantId || r.tenantId === form.tenantId)
     : restaurants;
@@ -213,7 +251,7 @@ export default function UsersPage() {
                   <td>
                     <div className="flex gap-8">
                       {(u.role === 'FUNCIONARIO' || u.role === 'FISCAL') && (
-                        <button className="btn btn-sm btn-secondary" onClick={() => viewQr(u)} title="QR Code">📲</button>
+                        <button className="btn btn-sm btn-secondary" onClick={() => viewBarcode(u)} title="Ver Crachá">🪪</button>
                       )}
                       <button className="btn btn-sm btn-secondary" onClick={() => openEdit(u)}>✏️</button>
                       <button className="btn btn-sm btn-danger" onClick={() => deactivate(u.id)}>🗑️</button>
@@ -342,45 +380,49 @@ export default function UsersPage() {
         </div>
       )}
 
-      {showQrModal && qrData && (
-        <div className="modal-overlay" onClick={() => setShowQrModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center', maxWidth: 400 }}>
+      {/* ── Modal do Crachá (Código de Barras) ── */}
+      {showBarcodeModal && barcodeData && (
+        <div className="modal-overlay" onClick={() => setShowBarcodeModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center', maxWidth: 440 }}>
             <div className="modal-header">
-              <h2 className="modal-title">QR Code — Impressão</h2>
-              <button className="modal-close" onClick={() => setShowQrModal(false)}>✕</button>
+              <h2 className="modal-title">🪪 Crachá — Código de Barras</h2>
+              <button className="modal-close" onClick={() => setShowBarcodeModal(false)}>✕</button>
             </div>
 
-            <div className="qr-container" style={{ margin: '20px auto' }}>
-              {qrData.qrDataUrl ? (
+            <div style={{ margin: '20px auto', padding: '0 8px' }}>
+              {barcodeData.barcodeToken ? (
                 <>
-                  <img src={qrData.qrDataUrl} alt="QR Code" style={{ width: 220, height: 220 }} />
-                  <div style={{ marginTop: 16, fontSize: 13 }}>
-                    <p style={{ fontWeight: 600, margin: 0 }}>{qrData.userName}</p>
-                    <p style={{ color: '#666', margin: '4px 0 0' }}>
-                      {qrData.employeeCode ? `Cód: ${qrData.employeeCode}` : qrData.userId?.slice(0, 8)}
+                  <div style={{
+                    background: '#fff', border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-md)', padding: '20px 16px',
+                    display: 'inline-block', minWidth: 300,
+                  }}>
+                    <BarcodeDisplay
+                      value={barcodeData.barcodeToken}
+                      userName={barcodeData.userName}
+                      employeeCode={barcodeData.employeeCode}
+                    />
+                  </div>
+
+                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16, marginTop: 20 }}>
+                    <p style={{ fontSize: 12, color: '#666', marginBottom: 0 }}>
+                      Imprima este código de barras e cole no crachá do funcionário.<br />
+                      Compatible com leitores <strong>1D e 2D</strong> (Elgin Flash II, Bematech BR520 etc.).
                     </p>
                   </div>
                 </>
               ) : (
-                <p className="text-muted">QR Code não disponível. O usuário pode não ter sido criado como FUNCIONARIO ou FISCAL.</p>
+                <p className="text-muted">Código de barras não disponível. O usuário pode não ter sido criado como FUNCIONARIO ou FISCAL.</p>
               )}
             </div>
 
-            {qrData.qrDataUrl && (
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16, marginTop: 8 }}>
-                <p style={{ fontSize: 12, color: '#666', marginBottom: 12 }}>
-                  Imprima este QR Code e cole no crachá do funcionário
-                </p>
-              </div>
-            )}
-
             <div className="modal-actions" style={{ justifyContent: 'center', gap: 12 }}>
-              {qrData.qrDataUrl && (
-                <button className="btn btn-danger" onClick={regenerateQr}>
+              {barcodeData.barcodeToken && (
+                <button className="btn btn-danger" onClick={regenerateBarcode}>
                   🔄 Regenerar
                 </button>
               )}
-              <button className="btn btn-secondary" onClick={() => setShowQrModal(false)}>Fechar</button>
+              <button className="btn btn-secondary" onClick={() => setShowBarcodeModal(false)}>Fechar</button>
             </div>
           </div>
         </div>

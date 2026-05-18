@@ -35,12 +35,12 @@ let MealConsumptionsService = class MealConsumptionsService {
         this.usersService = usersService;
     }
     async register(userId, tenantId, dto) {
-        const user = await this.usersService.findByQrToken(dto.qrCodeToken);
+        const user = await this.usersService.findByBarcodeToken(dto.qrCodeToken);
         if (user.id !== userId) {
-            throw new common_1.BadRequestException('QR Code não pertence a este usuário');
+            throw new common_1.BadRequestException('Código de barras não pertence a este usuário');
         }
         if (user.tenantId !== tenantId) {
-            throw new common_1.BadRequestException('QR Code não pertence à sua empresa');
+            throw new common_1.BadRequestException('Código de barras não pertence à sua empresa');
         }
         const allowedIds = await this.usersService.getAllowedRestaurantIds(userId);
         const currentWindow = await this.mealTypesService.getCurrentMealWindowForTenant(tenantId, allowedIds);
@@ -86,7 +86,7 @@ let MealConsumptionsService = class MealConsumptionsService {
         });
     }
     async registerByFiscal(fiscalId, fiscalTenantId, targetUserId, notes) {
-        const targetUser = await this.usersService.findByQrTokenForFiscal(targetUserId);
+        const targetUser = await this.usersService.findByBarcodeTokenForFiscal(targetUserId);
         if (targetUser.tenantId !== fiscalTenantId) {
             throw new common_1.BadRequestException('Funcionário não pertence a esta empresa');
         }

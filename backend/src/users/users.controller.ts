@@ -24,10 +24,10 @@ export class UsersController {
   @Roles(UserRole.ROOT, UserRole.GERENTE)
   findOne(@Param('id') id: string) { return this.service.findOne(id); }
 
-  // Retorna os dados do QR Code do funcionário (userId encodado)
+  // Retorna os dados do código de barras do funcionário
   // Acessível pelo próprio usuário, FISCAL e GERENTE do mesmo tenant
-  @Get(':id/qrcode')
-  async getUserQrCode(@Param('id') id: string, @Request() req: any) {
+  @Get(':id/barcode')
+  async getUserBarcode(@Param('id') id: string, @Request() req: any) {
     const caller = req.user;
     if (caller.role !== UserRole.ROOT) {
       const target = await this.service.findOne(id);
@@ -35,12 +35,25 @@ export class UsersController {
         throw new ForbiddenException('Acesso negado');
       }
     }
-    return this.service.getUserQrData(id);
+    return this.service.getUserBarcodeData(id);
   }
 
-  @Post(':id/regenerate-qr')
+  // Alias de retrocompatibilidade com mobile
+  @Get(':id/qrcode')
+  async getUserQrCodeAlias(@Param('id') id: string, @Request() req: any) {
+    const caller = req.user;
+    if (caller.role !== UserRole.ROOT) {
+      const target = await this.service.findOne(id);
+      if (target.tenantId !== caller.tenantId && caller.id !== id) {
+        throw new ForbiddenException('Acesso negado');
+      }
+    }
+    return this.service.getUserBarcodeData(id);
+  }
+
+  @Post(':id/regenerate-barcode')
   @Roles(UserRole.ROOT, UserRole.GERENTE)
-  async regenerateUserQr(@Param('id') id: string, @Request() req: any) {
+  async regenerateUserBarcode(@Param('id') id: string, @Request() req: any) {
     const caller = req.user;
     if (caller.role !== UserRole.ROOT) {
       const target = await this.service.findOne(id);
@@ -48,7 +61,21 @@ export class UsersController {
         throw new ForbiddenException('Acesso negado');
       }
     }
-    return this.service.regenerateUserQr(id);
+    return this.service.regenerateUserBarcode(id);
+  }
+
+  // Alias de retrocompatibilidade
+  @Post(':id/regenerate-qr')
+  @Roles(UserRole.ROOT, UserRole.GERENTE)
+  async regenerateUserQrAlias(@Param('id') id: string, @Request() req: any) {
+    const caller = req.user;
+    if (caller.role !== UserRole.ROOT) {
+      const target = await this.service.findOne(id);
+      if (target.tenantId !== caller.tenantId) {
+        throw new ForbiddenException('Acesso negado');
+      }
+    }
+    return this.service.regenerateUserBarcode(id);
   }
 
   @Post()

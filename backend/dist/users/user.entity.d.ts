@@ -17,7 +17,7 @@ export declare class User {
     passwordHash: string;
     role: UserRole;
     employeeCode: string;
-    qrCodeToken: string | null;
+    barcodeToken: string | null;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
