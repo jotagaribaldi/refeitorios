@@ -50,7 +50,7 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const bcrypt = __importStar(require("bcryptjs"));
-const uuid_1 = require("uuid");
+const crypto_1 = require("crypto");
 const user_entity_1 = require("./user.entity");
 const restaurant_entity_1 = require("../restaurants/restaurant.entity");
 let UsersService = class UsersService {
@@ -59,6 +59,15 @@ let UsersService = class UsersService {
     constructor(repo, restaurantRepo) {
         this.repo = repo;
         this.restaurantRepo = restaurantRepo;
+    }
+    async generateUniqueBarcodeToken() {
+        let token;
+        let exists;
+        do {
+            token = String((0, crypto_1.randomInt)(10_000_000, 100_000_000));
+            exists = await this.repo.findOne({ where: { barcodeToken: token } });
+        } while (exists);
+        return token;
     }
     async findAll(tenantId) {
         const where = tenantId ? { tenantId } : {};
@@ -92,7 +101,7 @@ let UsersService = class UsersService {
         const { password, allowedRestaurantIds, ...rest } = dto;
         const passwordHash = await bcrypt.hash(password, 10);
         const barcodeToken = (dto.role === user_entity_1.UserRole.FUNCIONARIO || dto.role === user_entity_1.UserRole.FISCAL || dto.role === user_entity_1.UserRole.GERENTE)
-            ? (0, uuid_1.v4)()
+            ? await this.generateUniqueBarcodeToken()
             : null;
         const user = this.repo.create({ ...rest, passwordHash, barcodeToken });
         if (allowedRestaurantIds?.length && dto.role === user_entity_1.UserRole.FUNCIONARIO) {
@@ -174,8 +183,9 @@ let UsersService = class UsersService {
         });
         if (!user)
             throw new common_1.NotFoundException('Usuário não encontrado');
-        if (!user.barcodeToken) {
-            user.barcodeToken = (0, uuid_1.v4)();
+        const isUuid = user.barcodeToken && user.barcodeToken.includes('-');
+        if (!user.barcodeToken || isUuid) {
+            user.barcodeToken = await this.generateUniqueBarcodeToken();
             await this.repo.save(user);
         }
         return {
@@ -190,7 +200,7 @@ let UsersService = class UsersService {
         const user = await this.repo.findOne({ where: { id: userId } });
         if (!user)
             throw new common_1.NotFoundException('Usuário não encontrado');
-        user.barcodeToken = (0, uuid_1.v4)();
+        user.barcodeToken = await this.generateUniqueBarcodeToken();
         await this.repo.save(user);
         return this.getUserBarcodeData(userId);
     }

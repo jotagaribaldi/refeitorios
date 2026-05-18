@@ -4,7 +4,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import { v4 as uuidv4 } from 'uuid';
+import { randomInt } from 'crypto';
 import { User, UserRole } from './user.entity';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
 import { Restaurant } from '../restaurants/restaurant.entity';
@@ -16,6 +16,17 @@ export class UsersService {
     @InjectRepository(Restaurant) private restaurantRepo: Repository<Restaurant>,
   ) {}
 
+  // Gera token numérico único de 8 dígitos (Code 128C — muito mais compacto que UUID)
+  private async generateUniqueBarcodeToken(): Promise<string> {
+    let token: string;
+    let exists: User | null;
+    do {
+      // 8 dígitos: 10.000.000 a 99.999.999 (garante sempre 8 dígitos)
+      token = String(randomInt(10_000_000, 100_000_000));
+      exists = await this.repo.findOne({ where: { barcodeToken: token } });
+    } while (exists);
+    return token;
+  }
   async findAll(tenantId?: string) {
     const where = tenantId ? { tenantId } : {};
     const users = await this.repo.find({
@@ -52,7 +63,7 @@ export class UsersService {
     const { password, allowedRestaurantIds, ...rest } = dto;
     const passwordHash = await bcrypt.hash(password, 10);
     const barcodeToken = (dto.role === UserRole.FUNCIONARIO || dto.role === UserRole.FISCAL || dto.role === UserRole.GERENTE)
-      ? uuidv4()
+      ? await this.generateUniqueBarcodeToken()
       : null;
     const user = this.repo.create({ ...rest, passwordHash, barcodeToken });
 
@@ -149,8 +160,10 @@ export class UsersService {
       relations: ['tenant'],
     });
     if (!user) throw new NotFoundException('Usuário não encontrado');
-    if (!user.barcodeToken) {
-      user.barcodeToken = uuidv4();
+    // Gera token curto se ainda não tem ou se ainda é um UUID longo (migração automática)
+    const isUuid = user.barcodeToken && user.barcodeToken.includes('-');
+    if (!user.barcodeToken || isUuid) {
+      user.barcodeToken = await this.generateUniqueBarcodeToken();
       await this.repo.save(user);
     }
     return {
@@ -165,7 +178,7 @@ export class UsersService {
   async regenerateUserBarcode(userId: string) {
     const user = await this.repo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('Usuário não encontrado');
-    user.barcodeToken = uuidv4();
+    user.barcodeToken = await this.generateUniqueBarcodeToken();
     await this.repo.save(user);
     return this.getUserBarcodeData(userId);
   }

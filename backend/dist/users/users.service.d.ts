@@ -6,6 +6,7 @@ export declare class UsersService {
     private repo;
     private restaurantRepo;
     constructor(repo: Repository<User>, restaurantRepo: Repository<Restaurant>);
+    private generateUniqueBarcodeToken;
     findAll(tenantId?: string): Promise<{
         id: string;
         tenantId: string;
