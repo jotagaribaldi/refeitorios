@@ -6,7 +6,9 @@ export declare enum UserRole {
     ROOT = "ROOT",
     GERENTE = "GERENTE",
     FUNCIONARIO = "FUNCIONARIO",
-    FISCAL = "FISCAL"
+    FISCAL = "FISCAL",
+    VISITANTE = "VISITANTE",
+    FORNECEDOR = "FORNECEDOR"
 }
 export declare class User {
     id: string;

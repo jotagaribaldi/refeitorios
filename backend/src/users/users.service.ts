@@ -51,8 +51,8 @@ export class UsersService {
   async create(dto: CreateUserDto, currentUser: any) {
     // ROOT may specify tenantId; GERENTE always uses own tenantId
     if (currentUser.role === UserRole.GERENTE) {
-      if (dto.role !== UserRole.FUNCIONARIO && dto.role !== UserRole.FISCAL) {
-        throw new ForbiddenException('Gerente só pode criar funcionários ou fiscais');
+      if (dto.role !== UserRole.FUNCIONARIO && dto.role !== UserRole.FISCAL && dto.role !== UserRole.VISITANTE && dto.role !== UserRole.FORNECEDOR) {
+        throw new ForbiddenException('Gerente só pode criar funcionários, fiscais, visitantes ou fornecedores');
       }
       dto.tenantId = currentUser.tenantId;
     }
@@ -62,13 +62,13 @@ export class UsersService {
 
     const { password, allowedRestaurantIds, ...rest } = dto;
     const passwordHash = await bcrypt.hash(password, 10);
-    const barcodeToken = (dto.role === UserRole.FUNCIONARIO || dto.role === UserRole.FISCAL || dto.role === UserRole.GERENTE)
+    const barcodeToken = (dto.role === UserRole.FUNCIONARIO || dto.role === UserRole.FISCAL || dto.role === UserRole.GERENTE || dto.role === UserRole.VISITANTE)
       ? await this.generateUniqueBarcodeToken()
       : null;
     const user = this.repo.create({ ...rest, passwordHash, barcodeToken });
 
-    // Vincula refeitórios permitidos (apenas para FUNCIONARIO)
-    if (allowedRestaurantIds?.length && dto.role === UserRole.FUNCIONARIO) {
+    // Vincula refeitórios permitidos (apenas para FUNCIONARIO e VISITANTE)
+    if (allowedRestaurantIds?.length && (dto.role === UserRole.FUNCIONARIO || dto.role === UserRole.VISITANTE)) {
       user.allowedRestaurants = await this.restaurantRepo.findBy({
         id: In(allowedRestaurantIds),
       });
@@ -94,10 +94,10 @@ export class UsersService {
 
     // Segurança: Gerente não pode dar permissão de ROOT ou outro GERENTE para ninguém
     if (currentUser.role === UserRole.GERENTE && dto.role) {
-      const allowedRoles = [UserRole.FUNCIONARIO, UserRole.FISCAL];
+      const allowedRoles = [UserRole.FUNCIONARIO, UserRole.FISCAL, UserRole.VISITANTE, UserRole.FORNECEDOR];
       const isSelfGerente = user.id === currentUser.id && dto.role === UserRole.GERENTE;
       if (!allowedRoles.includes(dto.role as UserRole) && !isSelfGerente) {
-        throw new ForbiddenException('Gerente só pode gerenciar perfis de funcionários e fiscais');
+        throw new ForbiddenException('Gerente só pode gerenciar perfis de funcionários, fiscais, visitantes e fornecedores');
       }
     }
 
@@ -208,6 +208,18 @@ export class UsersService {
   }
 
   async seedRoot() {
+    // Altera o tipo enum no Postgres de forma segura para garantir que VISITANTE e FORNECEDOR existam
+    try {
+      await this.repo.query(`ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'VISITANTE'`);
+    } catch (e) {
+      console.warn('⚠️ Erro ao atualizar enum user_role para VISITANTE:', e.message);
+    }
+    try {
+      await this.repo.query(`ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'FORNECEDOR'`);
+    } catch (e) {
+      console.warn('⚠️ Erro ao atualizar enum user_role para FORNECEDOR:', e.message);
+    }
+
     const exists = await this.repo.findOne({ where: { email: 'root@refeitorios.com' } });
     if (exists) return;
     const passwordHash = await bcrypt.hash('root@123', 10);

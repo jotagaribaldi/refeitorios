@@ -8,6 +8,7 @@ import DashboardPage from './pages/DashboardPage';
 import TenantsPage from './pages/TenantsPage';
 import RestaurantsPage from './pages/RestaurantsPage';
 import UsersPage from './pages/UsersPage';
+import VisitorsPage from './pages/VisitorsPage';
 import AllowancesPage from './pages/AllowancesPage';
 import ConsumptionsPage from './pages/ConsumptionsPage';
 import MealTypesPage from './pages/MealTypesPage';
@@ -26,6 +27,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 function HomeRedirect() {
   const { user } = useAuth();
   if (user?.role === 'FUNCIONARIO' || user?.role === 'FISCAL') return <Navigate to="/scan" replace />;
+  if (user?.role === 'FORNECEDOR') return <Navigate to="/consumptions" replace />;
   return <Navigate to="/dashboard" replace />;
 }
 
@@ -58,6 +60,12 @@ function AppRoutes() {
           <AppLayout><UsersPage /></AppLayout>
         </ProtectedRoute>
       } />
+      
+      <Route path="/visitors" element={
+        <ProtectedRoute roles={['ROOT', 'GERENTE']}>
+          <AppLayout><VisitorsPage /></AppLayout>
+        </ProtectedRoute>
+      } />
 
       <Route path="/allowances" element={
         <ProtectedRoute roles={['ROOT', 'GERENTE']}>
@@ -66,7 +74,7 @@ function AppRoutes() {
       } />
 
       <Route path="/consumptions" element={
-        <ProtectedRoute roles={['ROOT', 'GERENTE']}>
+        <ProtectedRoute roles={['ROOT', 'GERENTE', 'FORNECEDOR']}>
           <AppLayout><ConsumptionsPage /></AppLayout>
         </ProtectedRoute>
       } />

@@ -81,7 +81,7 @@ __decorate([
 __decorate([
     (0, common_1.Get)(),
     (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
-    (0, roles_guard_1.Roles)(user_entity_1.UserRole.ROOT, user_entity_1.UserRole.GERENTE),
+    (0, roles_guard_1.Roles)(user_entity_1.UserRole.ROOT, user_entity_1.UserRole.GERENTE, user_entity_1.UserRole.FORNECEDOR),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Query)('userId')),
     __param(2, (0, common_1.Query)('restaurantId')),

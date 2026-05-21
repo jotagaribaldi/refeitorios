@@ -21,6 +21,8 @@ var UserRole;
     UserRole["GERENTE"] = "GERENTE";
     UserRole["FUNCIONARIO"] = "FUNCIONARIO";
     UserRole["FISCAL"] = "FISCAL";
+    UserRole["VISITANTE"] = "VISITANTE";
+    UserRole["FORNECEDOR"] = "FORNECEDOR";
 })(UserRole || (exports.UserRole = UserRole = {}));
 let User = class User {
     id;

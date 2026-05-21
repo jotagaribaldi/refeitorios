@@ -90,8 +90,8 @@ let UsersService = class UsersService {
     }
     async create(dto, currentUser) {
         if (currentUser.role === user_entity_1.UserRole.GERENTE) {
-            if (dto.role !== user_entity_1.UserRole.FUNCIONARIO && dto.role !== user_entity_1.UserRole.FISCAL) {
-                throw new common_1.ForbiddenException('Gerente só pode criar funcionários ou fiscais');
+            if (dto.role !== user_entity_1.UserRole.FUNCIONARIO && dto.role !== user_entity_1.UserRole.FISCAL && dto.role !== user_entity_1.UserRole.VISITANTE && dto.role !== user_entity_1.UserRole.FORNECEDOR) {
+                throw new common_1.ForbiddenException('Gerente só pode criar funcionários, fiscais, visitantes ou fornecedores');
             }
             dto.tenantId = currentUser.tenantId;
         }
@@ -100,11 +100,11 @@ let UsersService = class UsersService {
             throw new common_1.ConflictException('Email já cadastrado');
         const { password, allowedRestaurantIds, ...rest } = dto;
         const passwordHash = await bcrypt.hash(password, 10);
-        const barcodeToken = (dto.role === user_entity_1.UserRole.FUNCIONARIO || dto.role === user_entity_1.UserRole.FISCAL || dto.role === user_entity_1.UserRole.GERENTE)
+        const barcodeToken = (dto.role === user_entity_1.UserRole.FUNCIONARIO || dto.role === user_entity_1.UserRole.FISCAL || dto.role === user_entity_1.UserRole.GERENTE || dto.role === user_entity_1.UserRole.VISITANTE)
             ? await this.generateUniqueBarcodeToken()
             : null;
         const user = this.repo.create({ ...rest, passwordHash, barcodeToken });
-        if (allowedRestaurantIds?.length && dto.role === user_entity_1.UserRole.FUNCIONARIO) {
+        if (allowedRestaurantIds?.length && (dto.role === user_entity_1.UserRole.FUNCIONARIO || dto.role === user_entity_1.UserRole.VISITANTE)) {
             user.allowedRestaurants = await this.restaurantRepo.findBy({
                 id: (0, typeorm_2.In)(allowedRestaurantIds),
             });
@@ -127,10 +127,10 @@ let UsersService = class UsersService {
             throw new common_1.ForbiddenException('Acesso negado');
         }
         if (currentUser.role === user_entity_1.UserRole.GERENTE && dto.role) {
-            const allowedRoles = [user_entity_1.UserRole.FUNCIONARIO, user_entity_1.UserRole.FISCAL];
+            const allowedRoles = [user_entity_1.UserRole.FUNCIONARIO, user_entity_1.UserRole.FISCAL, user_entity_1.UserRole.VISITANTE, user_entity_1.UserRole.FORNECEDOR];
             const isSelfGerente = user.id === currentUser.id && dto.role === user_entity_1.UserRole.GERENTE;
             if (!allowedRoles.includes(dto.role) && !isSelfGerente) {
-                throw new common_1.ForbiddenException('Gerente só pode gerenciar perfis de funcionários e fiscais');
+                throw new common_1.ForbiddenException('Gerente só pode gerenciar perfis de funcionários, fiscais, visitantes e fornecedores');
             }
         }
         if (currentUser.role === user_entity_1.UserRole.GERENTE && dto.tenantId && dto.tenantId !== currentUser.tenantId) {
@@ -229,6 +229,18 @@ let UsersService = class UsersService {
         return user;
     }
     async seedRoot() {
+        try {
+            await this.repo.query(`ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'VISITANTE'`);
+        }
+        catch (e) {
+            console.warn('⚠️ Erro ao atualizar enum user_role para VISITANTE:', e.message);
+        }
+        try {
+            await this.repo.query(`ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'FORNECEDOR'`);
+        }
+        catch (e) {
+            console.warn('⚠️ Erro ao atualizar enum user_role para FORNECEDOR:', e.message);
+        }
         const exists = await this.repo.findOne({ where: { email: 'root@refeitorios.com' } });
         if (exists)
             return;

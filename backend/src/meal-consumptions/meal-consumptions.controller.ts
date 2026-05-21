@@ -43,10 +43,10 @@ export class MealConsumptionsController {
     return this.service.findMyConsumptions(req.user.id);
   }
 
-  // Gerente/ROOT vê todos os consumos com filtros
+  // Gerente/ROOT/FORNECEDOR vê todos os consumos com filtros
   @Get()
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ROOT, UserRole.GERENTE)
+  @Roles(UserRole.ROOT, UserRole.GERENTE, UserRole.FORNECEDOR)
   findAll(
     @Request() req: any,
     @Query('userId') userId?: string,
