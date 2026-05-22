@@ -141,8 +141,9 @@ export class MealConsumptionsService {
 
     // 5. Verifica e debita saldo mensal do funcionário
     const now = new Date();
+    let allowance: any;
     try {
-      await this.allowancesService.incrementConsumed(targetUserId, now.getFullYear(), now.getMonth() + 1);
+      allowance = await this.allowancesService.incrementConsumed(targetUserId, now.getFullYear(), now.getMonth() + 1);
     } catch (err) {
       if (err.message === 'Saldo esgotado') {
         throw new BadRequestException(`Saldo de ${targetUser.name} está esgotado para este mês`);
@@ -177,6 +178,11 @@ export class MealConsumptionsService {
         name: targetUser.name,
         employeeCode: targetUser.employeeCode,
       },
+      allowance: allowance ? {
+        total: allowance.totalAllowance,
+        consumed: allowance.consumed,
+        remaining: allowance.totalAllowance - allowance.consumed,
+      } : null,
       authorized: true,
     };
   }

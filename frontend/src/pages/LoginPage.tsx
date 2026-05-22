@@ -5,8 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('root@refeitorios.com');
-  const [password, setPassword] = useState('root@123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -70,9 +70,6 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: 'var(--text-dim)' }}>
-          Admin padrão: root@refeitorios.com / root@123
-        </p>
       </div>
     </div>
   );

@@ -36,7 +36,7 @@ async function run() {
   // Wait, root password might be 'root@123' as per the seed?
   let token = rootLogin.body.access_token;
   if (!token) {
-    const rootLogin2 = await request('/api/auth/login', 'POST', { email: 'root@refeitorios.com', password: 'root@123' });
+    const rootLogin2 = await request('/api/auth/login', 'POST', { email: 'root@refeitorios.com', password: 'Tocantins#159' });
     token = rootLogin2.body.access_token;
   }
   console.log('Root token:', !!token);

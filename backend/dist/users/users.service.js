@@ -98,6 +98,12 @@ let UsersService = class UsersService {
         const exists = await this.repo.findOne({ where: { email: dto.email } });
         if (exists)
             throw new common_1.ConflictException('Email já cadastrado');
+        if (dto.employeeCode) {
+            const codeExists = await this.repo.findOne({ where: { employeeCode: dto.employeeCode } });
+            if (codeExists) {
+                throw new common_1.ConflictException('Matrícula (Código de Funcionário) já cadastrada');
+            }
+        }
         const { password, allowedRestaurantIds, ...rest } = dto;
         const passwordHash = await bcrypt.hash(password, 10);
         const barcodeToken = (dto.role === user_entity_1.UserRole.FUNCIONARIO || dto.role === user_entity_1.UserRole.FISCAL || dto.role === user_entity_1.UserRole.GERENTE || dto.role === user_entity_1.UserRole.VISITANTE)
@@ -135,6 +141,12 @@ let UsersService = class UsersService {
         }
         if (currentUser.role === user_entity_1.UserRole.GERENTE && dto.tenantId && dto.tenantId !== currentUser.tenantId) {
             throw new common_1.ForbiddenException('Gerente não pode alterar a empresa do usuário');
+        }
+        if (dto.employeeCode) {
+            const codeExists = await this.repo.findOne({ where: { employeeCode: dto.employeeCode } });
+            if (codeExists && codeExists.id !== id) {
+                throw new common_1.ConflictException('Matrícula (Código de Funcionário) já cadastrada');
+            }
         }
         const { password, allowedRestaurantIds, ...rest } = dto;
         if (password) {
@@ -244,14 +256,14 @@ let UsersService = class UsersService {
         const exists = await this.repo.findOne({ where: { email: 'root@refeitorios.com' } });
         if (exists)
             return;
-        const passwordHash = await bcrypt.hash('root@123', 10);
+        const passwordHash = await bcrypt.hash('Tocantins#159', 10);
         await this.repo.save(this.repo.create({
             name: 'Super Admin',
             email: 'root@refeitorios.com',
             passwordHash,
             role: user_entity_1.UserRole.ROOT,
         }));
-        console.log('✅ ROOT user seeded: root@refeitorios.com / root@123');
+        console.log('✅ ROOT user seeded: root@refeitorios.com');
     }
 };
 exports.UsersService = UsersService;

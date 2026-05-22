@@ -66,26 +66,7 @@ function PrintBarcodeDisplay({ value }: { value: string }) {
   return <svg ref={svgRef} className="zebra-label-barcode" />;
 }
 
-// Função utilitária para gerar o próximo código sequencial de usuário (GER00xxx, FUN00xxx, FIS00xxx, FOR00xxx)
-const generateNextUserCode = (role: string, existingUsers: any[]) => {
-  let prefix = 'FUN';
-  if (role === 'GERENTE') prefix = 'GER';
-  if (role === 'FISCAL') prefix = 'FIS';
-  if (role === 'FORNECEDOR') prefix = 'FOR';
 
-  let maxNum = 0;
-  existingUsers.forEach((u) => {
-    if (u.role === role && u.employeeCode && u.employeeCode.startsWith(prefix)) {
-      const numStr = u.employeeCode.replace(prefix, '');
-      const num = parseInt(numStr, 10);
-      if (!isNaN(num) && num > maxNum) {
-        maxNum = num;
-      }
-    }
-  });
-  const nextNum = maxNum + 1;
-  return `${prefix}${String(nextNum).padStart(5, '0')}`;
-};
 
 export default function UsersPage() {
   const { user: me } = useAuth();
@@ -193,7 +174,6 @@ export default function UsersPage() {
     setForm((f) => ({
       ...f,
       role,
-      employeeCode: editing ? f.employeeCode : generateNextUserCode(role, users),
     }));
   };
 
@@ -202,10 +182,9 @@ export default function UsersPage() {
     setError('');
     const defaultTenantId = isRoot ? '' : me?.tenantId || '';
     const defaultRole = 'FUNCIONARIO';
-    const nextCode = generateNextUserCode(defaultRole, users);
     setForm({
       name: '', email: '', password: '', role: defaultRole,
-      employeeCode: nextCode, tenantId: defaultTenantId, allowedRestaurantIds: [],
+      employeeCode: '', tenantId: defaultTenantId, allowedRestaurantIds: [],
     });
     setShowModal(true);
   };
@@ -240,6 +219,10 @@ export default function UsersPage() {
     setError('');
     if (isRoot && !editing && !form.tenantId) {
       setError('Selecione a empresa do funcionário.');
+      return;
+    }
+    if (!form.employeeCode || !form.employeeCode.trim()) {
+      setError('O Código do Funcionário (Matrícula) é obrigatório.');
       return;
     }
     setSaving(true);
@@ -384,8 +367,8 @@ export default function UsersPage() {
                       {(u.role === 'FUNCIONARIO' || u.role === 'FISCAL') && (
                         <button className="btn btn-sm btn-secondary" onClick={() => viewBarcode(u)} title="Ver Crachá">🪪</button>
                       )}
-                      <button className="btn btn-sm btn-secondary" onClick={() => openEdit(u)}>✏️</button>
-                      <button className="btn btn-sm btn-danger" onClick={() => deactivate(u.id)}>🗑️</button>
+                      <button className="btn btn-sm btn-secondary" onClick={() => openEdit(u)} title="Editar">✏️</button>
+                      <button className="btn btn-sm btn-danger" onClick={() => deactivate(u.id)} title="Excluir">🗑️</button>
                     </div>
                   </td>
                 </tr>
@@ -445,12 +428,11 @@ export default function UsersPage() {
                 </select>
               </div>
               <div className="form-group">
-                <label>Cód. Funcionário (Gerado Automaticamente)</label>
+                <label>Cód. Funcionário (Matrícula) *</label>
                 <input 
                   value={form.employeeCode} 
-                  disabled 
-                  style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed', color: '#4b5563' }} 
-                  placeholder="Gerando automaticamente..." 
+                  onChange={(e) => setForm({ ...form, employeeCode: e.target.value })}
+                  placeholder="Digite a matrícula (Ex: 123456)..." 
                 />
               </div>
             </div>

@@ -13,6 +13,11 @@ export declare class MealConsumptionsController {
             name: string;
             employeeCode: string;
         };
+        allowance: {
+            total: any;
+            consumed: any;
+            remaining: number;
+        } | null;
         authorized: boolean;
         id?: string | undefined;
         tenantId?: string | undefined;

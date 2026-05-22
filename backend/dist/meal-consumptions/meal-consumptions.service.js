@@ -119,8 +119,9 @@ let MealConsumptionsService = class MealConsumptionsService {
             }
         }
         const now = new Date();
+        let allowance;
         try {
-            await this.allowancesService.incrementConsumed(targetUserId, now.getFullYear(), now.getMonth() + 1);
+            allowance = await this.allowancesService.incrementConsumed(targetUserId, now.getFullYear(), now.getMonth() + 1);
         }
         catch (err) {
             if (err.message === 'Saldo esgotado') {
@@ -149,6 +150,11 @@ let MealConsumptionsService = class MealConsumptionsService {
                 name: targetUser.name,
                 employeeCode: targetUser.employeeCode,
             },
+            allowance: allowance ? {
+                total: allowance.totalAllowance,
+                consumed: allowance.consumed,
+                remaining: allowance.totalAllowance - allowance.consumed,
+            } : null,
             authorized: true,
         };
     }

@@ -135,13 +135,13 @@ export default function ScanPage() {
 
   useEffect(() => () => { scannerRef.current?.clear(); }, []);
 
-  // ── Auto-clear result after 5 seconds ──
+  // ── Auto-clear result after 8 seconds ──
   useEffect(() => {
     if (!result) return;
     const timer = setTimeout(() => {
       setResult(null);
       setLastMeal(null);
-    }, 5000);
+    }, 8000);
     return () => clearTimeout(timer);
   }, [result]);
 
@@ -191,9 +191,49 @@ export default function ScanPage() {
             </div>
             <div className="scan-result-text">{result.msg}</div>
             {lastMeal && result.type === 'success' && (
-              <div className="scan-result-detail">
-                {format(new Date(lastMeal.consumedAt), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
-              </div>
+              <>
+                <div className="scan-result-detail" style={{ marginBottom: 12 }}>
+                  {format(new Date(lastMeal.consumedAt), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                </div>
+
+                {lastMeal.employee && (
+                  <div style={{
+                    marginTop: 12,
+                    paddingTop: 12,
+                    borderTop: '1px solid rgba(16, 185, 129, 0.2)',
+                    width: '100%',
+                    maxWidth: '450px',
+                    textAlign: 'left'
+                  }}>
+                    <div style={{ marginBottom: 8, textAlign: 'center' }}>
+                      <span style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 600, display: 'block' }}>Funcionário</span>
+                      <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>{lastMeal.employee.name}</span>
+                      {lastMeal.employee.employeeCode && (
+                        <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
+                          Matrícula: <strong>{lastMeal.employee.employeeCode}</strong>
+                        </div>
+                      )}
+                    </div>
+
+                    {lastMeal.allowance && (
+                      <div className="grid-2" style={{ marginTop: 16, gap: 12 }}>
+                        <div style={{ background: 'var(--bg-elevated)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border)', textAlign: 'center' }}>
+                          <span style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>Consumido no Mês</span>
+                          <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>
+                            {lastMeal.allowance.consumed} / {lastMeal.allowance.total}
+                          </span>
+                        </div>
+                        <div style={{ background: 'rgba(59, 130, 246, 0.08)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(59, 130, 246, 0.2)', textAlign: 'center' }}>
+                          <span style={{ fontSize: 10, textTransform: 'uppercase', color: 'rgba(96, 165, 250, 0.8)', fontWeight: 600, display: 'block', marginBottom: 4 }}>Saldo Disponível</span>
+                          <span style={{ fontSize: 18, fontWeight: 800, color: '#60a5fa' }}>
+                            {lastMeal.allowance.remaining} refeições
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

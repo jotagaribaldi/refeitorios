@@ -8,7 +8,19 @@ interface ScanFiscalPageProps {
 
 type ResultState =
   | null
-  | { type: 'success'; employeeName: string; mealName: string; restaurant: string; time: string }
+  | { 
+      type: 'success'; 
+      employeeName: string; 
+      employeeCode?: string;
+      mealName: string; 
+      restaurant: string; 
+      time: string;
+      allowance?: {
+        total: number;
+        consumed: number;
+        remaining: number;
+      };
+    }
   | { type: 'error'; message: string };
 
 const MEAL_META: Record<string, { icon: string }> = {
@@ -80,14 +92,16 @@ export default function ScanFiscalPage({ onBack }: ScanFiscalPageProps) {
         userId = parsed.userId || raw;
       } catch {}
 
-      const { data } = await api.post('/consumptions/scan', { userId });
+      const { data } = await api.post('/consumptions/scan', { barcodeToken: userId });
       if (mountedRef.current) {
         setResult({
           type: 'success',
           employeeName: data.employee?.name || data.user?.name || 'Funcionário',
+          employeeCode: data.employee?.employeeCode,
           mealName: data.mealType?.name || 'Refeição',
           restaurant: data.restaurant?.name || '',
           time: new Date(data.consumedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+          allowance: data.allowance,
         });
       }
     } catch (err: any) {
@@ -208,10 +222,34 @@ export default function ScanFiscalPage({ onBack }: ScanFiscalPageProps) {
                 </div>
 
                 <div className="result-message">
-                  <strong>{result.employeeName}</strong><br />
+                  <strong>{result.employeeName}</strong>
+                  {result.employeeCode && <span style={{ opacity: 0.8, fontSize: 13 }}> ({result.employeeCode})</span>}
+                  <br />
                   {result.restaurant && <>{result.restaurant}<br /></>}
                   Registrado às {result.time}
                 </div>
+
+                {result.allowance && (
+                  <div style={{
+                    marginTop: 12,
+                    padding: 12,
+                    background: 'rgba(255,255,255,0.05)',
+                    borderRadius: 8,
+                    textAlign: 'left',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    marginBottom: 12
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
+                      <span style={{ color: 'rgba(255,255,255,0.6)' }}>Consumido no Mês:</span>
+                      <strong style={{ color: 'white' }}>{result.allowance.consumed} / {result.allowance.total}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                      <span style={{ color: 'rgba(255,255,255,0.6)' }}>Saldo Disponível:</span>
+                      <strong style={{ color: '#60a5fa' }}>{result.allowance.remaining} refeições</strong>
+                    </div>
+                  </div>
+                )}
 
                 <button className="result-btn result-btn-success" onClick={onBack}>
                   Concluir

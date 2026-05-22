@@ -1,6 +1,6 @@
 TOKEN=$(curl -s -X POST http://localhost:3003/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"root@refeitorios.com","password":"root@123"}' | grep -o '"accessToken":"[^"]*' | grep -o '[^"]*$')
+  -d '{"email":"root@refeitorios.com","password":"Tocantins#159"}' | grep -o '"accessToken":"[^"]*' | grep -o '[^"]*$')
 
 echo "Token: $TOKEN"
 

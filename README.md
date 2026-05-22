@@ -56,7 +56,7 @@ A API estará disponível em: **http://localhost:3000/api**
 
 > ✅ O usuário ROOT é criado automaticamente na primeira execução:
 > - Email: `root@refeitorios.com`
-> - Senha: `root@123`
+> - Senha: `Tocantins#159`
 
 ---
 
