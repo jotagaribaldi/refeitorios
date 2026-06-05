@@ -6,6 +6,26 @@ import { useAuth } from '../contexts/AuthContext';
 
 const ROLES = ['GERENTE', 'FISCAL', 'FUNCIONARIO', 'FORNECEDOR'];
 
+// Gera email automático: 3 letras do 1º nome + 4 letras do 2º nome + número aleatório
+function generateEmail(fullName: string): string {
+  const normalize = (str: string) =>
+    str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // remove acentos
+      .toLowerCase()
+      .replace(/[^a-z]/g, '');        // mantém apenas letras
+
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  const first = normalize(parts[0] || '');
+  const second = normalize(parts[1] || '');
+
+  const prefix1 = first.slice(0, 3);
+  const prefix2 = second.slice(0, 4);
+  const num = Math.floor(Math.random() * 999) + 1;
+
+  return `${prefix1}${prefix2}${num}@refeitorios.com`;
+}
+
 // Renderiza código de barras Code 128 via JsBarcode (biblioteca testada e validada)
 function BarcodeDisplay({ value, userName, employeeCode }: { value: string; userName: string; employeeCode?: string }) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -413,7 +433,29 @@ export default function UsersPage() {
             </div>
             <div className="form-group">
               <label>E-mail *</label>
-              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  title="Gerar e-mail automático baseado no nome do funcionário"
+                  onClick={() => {
+                    if (!form.name.trim()) {
+                      alert('Preencha o nome do funcionário antes de gerar o e-mail.');
+                      return;
+                    }
+                    setForm((f) => ({ ...f, email: generateEmail(f.name) }));
+                  }}
+                  style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+                >
+                  ✉️ Gerar Email
+                </button>
+              </div>
             </div>
             <div className="form-group">
               <label>Senha {editing ? '(deixar em branco para manter)' : '*'}</label>
