@@ -65,6 +65,21 @@ export declare class MealConsumptionsService {
         notes?: string | undefined;
         createdAt?: Date | undefined;
     }>;
+    queryBalanceByBarcodeToken(fiscalTenantId: string, barcodeToken: string): Promise<{
+        employee: {
+            id: string;
+            name: string;
+            employeeCode: string;
+        };
+        allowance: {
+            total: number;
+            consumed: number;
+            remaining: number;
+            year: number;
+            month: number;
+        } | null;
+        consumptions: MealConsumption[];
+    }>;
     findAll(tenantId?: string, filters?: {
         userId?: string;
         restaurantId?: string;

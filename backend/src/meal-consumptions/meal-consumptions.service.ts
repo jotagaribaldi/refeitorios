@@ -187,6 +187,50 @@ export class MealConsumptionsService {
     };
   }
 
+  // ─── CONSULTA DE SALDO (sem registrar consumo) ───────────────────────
+  async queryBalanceByBarcodeToken(fiscalTenantId: string, barcodeToken: string) {
+    // 1. Resolve o funcionário pelo token
+    const targetUser = await this.usersService.findByBarcodeToken(barcodeToken);
+    if (!targetUser) throw new BadRequestException('Código de barras inválido ou funcionário não encontrado');
+    if (!targetUser.isActive) throw new BadRequestException(`Funcionário ${targetUser.name} está inativo`);
+    if (targetUser.tenantId !== fiscalTenantId) throw new BadRequestException('Funcionário não pertence a esta empresa');
+
+    // 2. Busca saldo do mês corrente
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    const allowance = await this.allowancesService.findForUser(targetUser.id, year, month);
+
+    // 3. Busca consumos do mês corrente
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const endDate = now.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+    const consumptions = await this.repo.find({
+      where: { userId: targetUser.id },
+      relations: ['mealType', 'restaurant'],
+      order: { consumedAt: 'DESC' },
+    });
+    // Filtra apenas o mês corrente
+    const monthConsumptions = consumptions.filter((c) => c.date >= startDate && c.date <= endDate);
+
+    return {
+      employee: {
+        id: targetUser.id,
+        name: targetUser.name,
+        employeeCode: targetUser.employeeCode,
+      },
+      allowance: allowance
+        ? {
+            total: allowance.totalAllowance,
+            consumed: allowance.consumed,
+            remaining: allowance.totalAllowance - allowance.consumed,
+            year,
+            month,
+          }
+        : null,
+      consumptions: monthConsumptions,
+    };
+  }
+
   // ─── LISTAGEM ─────────────────────────────────────────────────────────
   async findAll(tenantId?: string, filters?: {
     userId?: string; restaurantId?: string; startDate?: string; endDate?: string;

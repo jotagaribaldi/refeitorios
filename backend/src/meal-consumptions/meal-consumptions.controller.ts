@@ -30,6 +30,14 @@ export class MealConsumptionsController {
     return this.service.registerByBarcodeToken(req.user.id, req.user.tenantId, dto.barcodeToken, dto.notes);
   }
 
+  // FISCAL consulta saldo de um funcionário sem registrar consumo
+  @Post('balance-query')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.FISCAL, UserRole.GERENTE)
+  queryBalance(@Body() dto: ScanBarcodeDto, @Request() req: any) {
+    return this.service.queryBalanceByBarcodeToken(req.user.tenantId, dto.barcodeToken);
+  }
+
 
   // Funcionário escaneia QR e registra consumo (legado - mantido por compatibilidade)
   @Post()

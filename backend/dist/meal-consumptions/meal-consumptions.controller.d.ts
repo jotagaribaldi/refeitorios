@@ -33,6 +33,21 @@ export declare class MealConsumptionsController {
         notes?: string | undefined;
         createdAt?: Date | undefined;
     }>;
+    queryBalance(dto: ScanBarcodeDto, req: any): Promise<{
+        employee: {
+            id: string;
+            name: string;
+            employeeCode: string;
+        };
+        allowance: {
+            total: number;
+            consumed: number;
+            remaining: number;
+            year: number;
+            month: number;
+        } | null;
+        consumptions: import("./meal-consumption.entity").MealConsumption[];
+    }>;
     register(dto: RegisterConsumptionDto, req: any): Promise<import("./meal-consumption.entity").MealConsumption | null>;
     myConsumptions(req: any): Promise<import("./meal-consumption.entity").MealConsumption[]>;
     findAll(req: any, userId?: string, restaurantId?: string, startDate?: string, endDate?: string): Promise<import("./meal-consumption.entity").MealConsumption[]>;

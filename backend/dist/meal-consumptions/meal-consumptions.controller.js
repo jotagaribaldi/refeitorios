@@ -41,6 +41,9 @@ let MealConsumptionsController = class MealConsumptionsController {
     scanEmployee(dto, req) {
         return this.service.registerByBarcodeToken(req.user.id, req.user.tenantId, dto.barcodeToken, dto.notes);
     }
+    queryBalance(dto, req) {
+        return this.service.queryBalanceByBarcodeToken(req.user.tenantId, dto.barcodeToken);
+    }
     register(dto, req) {
         return this.service.register(req.user.id, req.user.tenantId, dto);
     }
@@ -63,6 +66,16 @@ __decorate([
     __metadata("design:paramtypes", [ScanBarcodeDto, Object]),
     __metadata("design:returntype", void 0)
 ], MealConsumptionsController.prototype, "scanEmployee", null);
+__decorate([
+    (0, common_1.Post)('balance-query'),
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_guard_1.Roles)(user_entity_1.UserRole.FISCAL, user_entity_1.UserRole.GERENTE),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [ScanBarcodeDto, Object]),
+    __metadata("design:returntype", void 0)
+], MealConsumptionsController.prototype, "queryBalance", null);
 __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),

@@ -106,6 +106,7 @@ export default function UsersPage() {
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [usersToPrint, setUsersToPrint] = useState<any[]>([]);
   const [isPreparingPrint, setIsPreparingPrint] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -118,6 +119,18 @@ export default function UsersPage() {
 
   const availableRoles = isRoot ? ROLES : ['FISCAL', 'FUNCIONARIO', 'FORNECEDOR'];
 
+  // Filtra usuários com base no termo buscado (nome, e-mail ou cód. funcionário)
+  const filteredUsers = searchQuery.trim()
+    ? users.filter((u) => {
+        const q = searchQuery.toLowerCase();
+        return (
+          (u.name || '').toLowerCase().includes(q) ||
+          (u.email || '').toLowerCase().includes(q) ||
+          (u.employeeCode || '').toLowerCase().includes(q)
+        );
+      })
+    : users;
+
   const toggleSelectUser = (id: string) => {
     setSelectedUserIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -125,10 +138,12 @@ export default function UsersPage() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedUserIds.length === users.length) {
-      setSelectedUserIds([]);
+    const visibleIds = filteredUsers.map((u) => u.id);
+    const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedUserIds.includes(id));
+    if (allVisibleSelected) {
+      setSelectedUserIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
     } else {
-      setSelectedUserIds(users.map((u) => u.id));
+      setSelectedUserIds((prev) => Array.from(new Set([...prev, ...visibleIds])));
     }
   };
 
@@ -170,6 +185,7 @@ export default function UsersPage() {
 
       setUsers(uRes.data.filter((u: any) => u.role !== 'VISITANTE'));
       setSelectedUserIds([]);
+      setSearchQuery('');
       if (isRoot && tRes) setTenants(tRes.data.filter((t: any) => t.isActive));
       const rData = isRoot ? rRes?.data : tRes?.data;
       setRestaurants(rData || []);
@@ -330,6 +346,60 @@ export default function UsersPage() {
         </div>
       </div>
 
+      {/* ── Barra de busca ── */}
+      <div style={{
+        margin: '0 0 16px 0',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-md)',
+        padding: '8px 14px',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+      }}>
+        <span style={{ fontSize: 18, lineHeight: 1, color: 'var(--text-muted)' }}>🔍</span>
+        <input
+          id="users-search-input"
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Buscar por nome, e-mail ou cód. funcionário..."
+          style={{
+            flex: 1,
+            border: 'none',
+            outline: 'none',
+            background: 'transparent',
+            fontSize: 14,
+            color: 'var(--text)',
+            padding: 0,
+          }}
+        />
+        {searchQuery && (
+          <>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+              {filteredUsers.length} resultado(s)
+            </span>
+            <button
+              onClick={() => setSearchQuery('')}
+              title="Limpar busca"
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 16,
+                lineHeight: 1,
+                color: 'var(--text-muted)',
+                padding: '2px 4px',
+                borderRadius: 4,
+              }}
+            >
+              ✕
+            </button>
+          </>
+        )}
+      </div>
+
       <div className="table-container">
         {loading ? (
           <div className="loading-state"><div className="spinner" /></div>
@@ -338,6 +408,11 @@ export default function UsersPage() {
             <div className="empty-state-icon">👥</div>
             <p>Nenhum usuário cadastrado</p>
           </div>
+        ) : filteredUsers.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">🔍</div>
+            <p>Nenhum funcionário encontrado para <strong>"{searchQuery}"</strong></p>
+          </div>
         ) : (
           <table>
             <thead>
@@ -345,7 +420,10 @@ export default function UsersPage() {
                 <th style={{ width: 40, textAlign: 'center' }}>
                   <input
                     type="checkbox"
-                    checked={selectedUserIds.length === users.length && users.length > 0}
+                    checked={
+                      filteredUsers.length > 0 &&
+                      filteredUsers.every((u) => selectedUserIds.includes(u.id))
+                    }
                     onChange={toggleSelectAll}
                     style={{ width: 16, height: 16, cursor: 'pointer', accentColor: 'var(--primary)' }}
                   />
@@ -361,7 +439,7 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
+              {filteredUsers.map((u) => (
                 <tr key={u.id}>
                   <td style={{ textAlign: 'center' }}>
                     <input

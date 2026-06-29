@@ -25,52 +25,66 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="login-page">
-      <div className="login-card">
-        <div className="login-logo">
-          <div className="login-logo-icon">🍽️</div>
-          <h1 className="login-title">Refeitórios Corp</h1>
-          <p className="login-subtitle">Gestão de refeições corporativas</p>
+    <div className="login-page" style={{ flexDirection: 'column', gap: 0 }}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
+        <div className="login-card">
+          <div className="login-logo">
+            <div className="login-logo-icon">🍽️</div>
+            <h1 className="login-title">Refeitórios Corp</h1>
+            <p className="login-subtitle">Gestão de refeições corporativas</p>
+          </div>
+
+          {error && <div className="alert alert-error">⚠️ {error}</div>}
+
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label htmlFor="email">E-mail</label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="seu@email.com"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="password">Senha</label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-lg"
+              style={{ width: '100%', marginTop: 8, justifyContent: 'center' }}
+              disabled={loading}
+            >
+              {loading ? 'Entrando...' : '🚀 Entrar'}
+            </button>
+          </form>
+
         </div>
-
-        {error && <div className="alert alert-error">⚠️ {error}</div>}
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="email">E-mail</label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="seu@email.com"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="password">Senha</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="btn btn-primary btn-lg"
-            style={{ width: '100%', marginTop: 8, justifyContent: 'center' }}
-            disabled={loading}
-          >
-            {loading ? 'Entrando...' : '🚀 Entrar'}
-          </button>
-        </form>
-
       </div>
+
+      <footer className="app-footer">
+        Desenvolvimento{' '}
+        <a
+          href="https://suprema.eti.br/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="app-footer-link"
+        >
+          Suprema Consultoria
+        </a>
+      </footer>
     </div>
   );
 }

@@ -239,11 +239,40 @@ html, body {
 
 .logout-btn:hover { color: var(--danger); }
 
-.main-content {
+.main-wrapper {
   flex: 1;
   margin-left: 260px;
-  padding: 32px;
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  padding: 32px;
+}
+
+/* ─── App Footer ─────────────────── */
+.app-footer {
+  padding: 14px 32px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: 0.3px;
+}
+
+.app-footer-link {
+  color: var(--primary-light);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color var(--tr), opacity var(--tr);
+}
+
+.app-footer-link:hover {
+  color: var(--primary);
+  opacity: 0.85;
+  text-decoration: underline;
 }
 
 /* ─── Page Header ─────────────────── */

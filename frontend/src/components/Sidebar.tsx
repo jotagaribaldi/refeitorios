@@ -18,6 +18,7 @@ const navItems: NavItem[] = [
   { to: '/consumptions', icon: '📋', label: 'Consumos', roles: ['ROOT', 'GERENTE', 'FORNECEDOR'] },
   { to: '/meal-types', icon: '⏰', label: 'Tipos de Refeição', roles: ['GERENTE'] },
   { to: '/scan', icon: '📲', label: 'Escanear QR', roles: ['FUNCIONARIO', 'FISCAL', 'GERENTE'] },
+  { to: '/balance-query', icon: '💳', label: 'Consultar Saldo', roles: ['FISCAL', 'GERENTE'] },
   { to: '/my-consumptions', icon: '📋', label: 'Meus Consumos', roles: ['FUNCIONARIO'] },
 ];
 

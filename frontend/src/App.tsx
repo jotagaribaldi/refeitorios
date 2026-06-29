@@ -14,12 +14,26 @@ import ConsumptionsPage from './pages/ConsumptionsPage';
 import MealTypesPage from './pages/MealTypesPage';
 import ScanPage from './pages/ScanPage';
 import MyConsumptionsPage from './pages/MyConsumptionsPage';
+import BalanceQueryPage from './pages/BalanceQueryPage';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="app-shell">
       <Sidebar />
-      <main className="main-content">{children}</main>
+      <div className="main-wrapper">
+        <main className="main-content">{children}</main>
+        <footer className="app-footer">
+          Desenvolvimento{' '}
+          <a
+            href="https://suprema.eti.br/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="app-footer-link"
+          >
+            Suprema Consultoria
+          </a>
+        </footer>
+      </div>
     </div>
   );
 }
@@ -94,6 +108,12 @@ function AppRoutes() {
       <Route path="/my-consumptions" element={
         <ProtectedRoute roles={['FUNCIONARIO']}>
           <AppLayout><MyConsumptionsPage /></AppLayout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/balance-query" element={
+        <ProtectedRoute roles={['FISCAL', 'GERENTE']}>
+          <AppLayout><BalanceQueryPage /></AppLayout>
         </ProtectedRoute>
       } />
 
