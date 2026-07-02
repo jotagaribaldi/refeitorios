@@ -62,6 +62,40 @@ function BarcodeDisplay({ value, userName, employeeCode }: { value: string; user
   );
 }
 
+/**
+ * Quebra um nome longo em até duas linhas para impressão de etiqueta.
+ * Regra: se o nome tem mais de 28 caracteres, divide no espaço mais próximo
+ * do centro da string, garantindo que o nome apareça completo em duas linhas.
+ */
+function formatLabelName(name: string): { lines: string[]; isLong: boolean } {
+  const THRESHOLD = 28;
+  if (!name || name.length <= THRESHOLD) return { lines: [name], isLong: false };
+
+  const mid = Math.floor(name.length / 2);
+  // Procura o espaço mais próximo do centro (varre à direita e à esquerda)
+  let bestIdx = -1;
+  for (let delta = 0; delta <= mid; delta++) {
+    if (mid + delta < name.length && name[mid + delta] === ' ') {
+      bestIdx = mid + delta;
+      break;
+    }
+    if (mid - delta >= 0 && name[mid - delta] === ' ') {
+      bestIdx = mid - delta;
+      break;
+    }
+  }
+
+  if (bestIdx === -1) {
+    // Sem espaço (palavra única muito longa): retorna como uma linha só com fonte menor
+    return { lines: [name], isLong: true };
+  }
+
+  return {
+    lines: [name.slice(0, bestIdx).trim(), name.slice(bestIdx + 1).trim()],
+    isLong: true,
+  };
+}
+
 // Renderiza código de barras compacto otimizado para impressão de etiqueta térmica Zebra
 function PrintBarcodeDisplay({ value }: { value: string }) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -744,10 +778,16 @@ export default function UsersPage() {
                 font-weight: 700 !important;
                 margin: 2px 0 0 0 !important;
                 color: #000 !important;
-                white-space: nowrap !important;
-                overflow: hidden !important;
-                text-overflow: ellipsis !important;
+                white-space: normal !important;
+                overflow: visible !important;
+                text-overflow: unset !important;
                 width: 100% !important;
+                line-height: 1.2 !important;
+                word-break: break-word !important;
+              }
+
+              .zebra-label-name.name-long {
+                font-size: 11px !important;
               }
 
               .zebra-label-code {
@@ -760,16 +800,23 @@ export default function UsersPage() {
               }
             }
           `}</style>
-          {usersToPrint.map((u) => (
-            <div key={u.id} className="zebra-label">
-              <div className="zebra-label-header">
-                {u.tenant?.name || me?.tenant?.name || 'Acesso Refeitório'}
+          {usersToPrint.map((u) => {
+            const { lines, isLong } = formatLabelName(u.name || '');
+            return (
+              <div key={u.id} className="zebra-label">
+                <div className="zebra-label-header">
+                  {u.tenant?.name || me?.tenant?.name || 'Acesso Refeitório'}
+                </div>
+                <PrintBarcodeDisplay value={u.barcodeToken || u.employeeCode} />
+                <div className={`zebra-label-name${isLong ? ' name-long' : ''}`}>
+                  {lines.map((line, i) => (
+                    <span key={i} style={{ display: 'block' }}>{line}</span>
+                  ))}
+                </div>
+                <div className="zebra-label-code">{u.employeeCode}</div>
               </div>
-              <PrintBarcodeDisplay value={u.barcodeToken || u.employeeCode} />
-              <div className="zebra-label-name">{u.name}</div>
-              <div className="zebra-label-code">{u.employeeCode}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>,
         document.body
       )}
