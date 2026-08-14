@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdateAllowanceDto = exports.CreateAllowanceDto = void 0;
+exports.CreateBatchAllowanceDto = exports.UpdateAllowanceDto = exports.CreateAllowanceDto = void 0;
 const class_validator_1 = require("class-validator");
 class CreateAllowanceDto {
     userId;
@@ -47,4 +47,31 @@ __decorate([
     (0, class_validator_1.Min)(0),
     __metadata("design:type", Number)
 ], UpdateAllowanceDto.prototype, "totalAllowance", void 0);
+class CreateBatchAllowanceDto {
+    tenantId;
+    year;
+    month;
+    totalAllowance;
+}
+exports.CreateBatchAllowanceDto = CreateBatchAllowanceDto;
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateBatchAllowanceDto.prototype, "tenantId", void 0);
+__decorate([
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(2020),
+    __metadata("design:type", Number)
+], CreateBatchAllowanceDto.prototype, "year", void 0);
+__decorate([
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], CreateBatchAllowanceDto.prototype, "month", void 0);
+__decorate([
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], CreateBatchAllowanceDto.prototype, "totalAllowance", void 0);
 //# sourceMappingURL=monthly-allowance.dto.js.map

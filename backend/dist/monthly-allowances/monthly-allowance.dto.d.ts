@@ -7,3 +7,9 @@ export declare class CreateAllowanceDto {
 export declare class UpdateAllowanceDto {
     totalAllowance?: number;
 }
+export declare class CreateBatchAllowanceDto {
+    tenantId?: string;
+    year: number;
+    month: number;
+    totalAllowance: number;
+}

@@ -3,7 +3,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { MonthlyAllowancesService } from './monthly-allowances.service';
-import { CreateAllowanceDto, UpdateAllowanceDto } from './monthly-allowance.dto';
+import { CreateAllowanceDto, UpdateAllowanceDto, CreateBatchAllowanceDto } from './monthly-allowance.dto';
 import { RolesGuard, Roles } from '../auth/roles.guard';
 import { UserRole } from '../users/user.entity';
 
@@ -35,6 +35,13 @@ export class MonthlyAllowancesController {
     return this.service.create(dto, tenantId);
   }
 
+  @Post('batch')
+  @Roles(UserRole.GERENTE, UserRole.ROOT)
+  createBatch(@Body() dto: CreateBatchAllowanceDto, @Request() req: any) {
+    const tenantId = req.user.role === UserRole.ROOT ? dto.tenantId : req.user.tenantId;
+    return this.service.createBatch(dto, tenantId);
+  }
+
   @Put(':id')
   @Roles(UserRole.GERENTE, UserRole.ROOT)
   update(@Param('id') id: string, @Body() dto: UpdateAllowanceDto, @Request() req: any) {
@@ -42,3 +49,4 @@ export class MonthlyAllowancesController {
     return this.service.update(id, tenantId, dto);
   }
 }
+

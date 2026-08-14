@@ -23,3 +23,22 @@ export class UpdateAllowanceDto {
   @Min(0)
   totalAllowance?: number;
 }
+
+export class CreateBatchAllowanceDto {
+  @IsOptional()
+  @IsString()
+  tenantId?: string;
+
+  @IsInt()
+  @Min(2020)
+  year: number;
+
+  @IsInt()
+  @Min(1)
+  month: number;
+
+  @IsInt()
+  @Min(1)
+  totalAllowance: number;
+}
+

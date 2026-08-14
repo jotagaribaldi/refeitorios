@@ -32,6 +32,10 @@ let MonthlyAllowancesController = class MonthlyAllowancesController {
         const tenantId = req.user.role === user_entity_1.UserRole.ROOT ? undefined : req.user.tenantId;
         return this.service.create(dto, tenantId);
     }
+    createBatch(dto, req) {
+        const tenantId = req.user.role === user_entity_1.UserRole.ROOT ? dto.tenantId : req.user.tenantId;
+        return this.service.createBatch(dto, tenantId);
+    }
     update(id, dto, req) {
         const tenantId = req.user.role === user_entity_1.UserRole.ROOT ? undefined : req.user.tenantId;
         return this.service.update(id, tenantId, dto);
@@ -57,6 +61,15 @@ __decorate([
     __metadata("design:paramtypes", [monthly_allowance_dto_1.CreateAllowanceDto, Object]),
     __metadata("design:returntype", void 0)
 ], MonthlyAllowancesController.prototype, "create", null);
+__decorate([
+    (0, common_1.Post)('batch'),
+    (0, roles_guard_1.Roles)(user_entity_1.UserRole.GERENTE, user_entity_1.UserRole.ROOT),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [monthly_allowance_dto_1.CreateBatchAllowanceDto, Object]),
+    __metadata("design:returntype", void 0)
+], MonthlyAllowancesController.prototype, "createBatch", null);
 __decorate([
     (0, common_1.Put)(':id'),
     (0, roles_guard_1.Roles)(user_entity_1.UserRole.GERENTE, user_entity_1.UserRole.ROOT),

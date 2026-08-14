@@ -59,6 +59,48 @@ let MonthlyAllowancesService = class MonthlyAllowancesService {
         const saved = await this.repo.save(a);
         return this.repo.findOne({ where: { id: saved.id }, relations: ['user'] });
     }
+    async createBatch(dto, callerTenantId) {
+        const targetTenantId = callerTenantId || dto.tenantId;
+        const where = { isActive: true };
+        if (targetTenantId) {
+            where.tenantId = targetTenantId;
+        }
+        where.role = (0, typeorm_2.In)([user_entity_1.UserRole.FUNCIONARIO, user_entity_1.UserRole.FISCAL, user_entity_1.UserRole.GERENTE, user_entity_1.UserRole.VISITANTE]);
+        const users = await this.userRepo.find({ where });
+        if (users.length === 0) {
+            throw new common_1.NotFoundException('Nenhum funcionário ativo encontrado para o critério selecionado');
+        }
+        let created = 0;
+        let updated = 0;
+        for (const user of users) {
+            const existing = await this.repo.findOne({
+                where: { userId: user.id, year: dto.year, month: dto.month },
+            });
+            if (existing) {
+                existing.totalAllowance = Math.max(dto.totalAllowance, existing.consumed);
+                await this.repo.save(existing);
+                updated++;
+            }
+            else {
+                const allowance = this.repo.create({
+                    userId: user.id,
+                    tenantId: user.tenantId,
+                    year: dto.year,
+                    month: dto.month,
+                    totalAllowance: dto.totalAllowance,
+                    consumed: 0,
+                });
+                await this.repo.save(allowance);
+                created++;
+            }
+        }
+        return {
+            message: `Saldo atribuído com sucesso para ${users.length} funcionário(s). (${created} novo(s), ${updated} atualizado(s))`,
+            count: users.length,
+            created,
+            updated,
+        };
+    }
     async update(id, tenantId, dto) {
         const where = { id };
         if (tenantId)

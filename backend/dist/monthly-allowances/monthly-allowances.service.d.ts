@@ -1,6 +1,6 @@
 import { Repository } from 'typeorm';
 import { MonthlyAllowance } from './monthly-allowance.entity';
-import { CreateAllowanceDto, UpdateAllowanceDto } from './monthly-allowance.dto';
+import { CreateAllowanceDto, UpdateAllowanceDto, CreateBatchAllowanceDto } from './monthly-allowance.dto';
 import { User } from '../users/user.entity';
 export declare class MonthlyAllowancesService {
     private repo;
@@ -9,6 +9,12 @@ export declare class MonthlyAllowancesService {
     findAll(tenantId?: string, year?: number, month?: number): Promise<MonthlyAllowance[]>;
     findForUser(userId: string, year: number, month: number): Promise<MonthlyAllowance | null>;
     create(dto: CreateAllowanceDto, callerTenantId?: string): Promise<MonthlyAllowance | null>;
+    createBatch(dto: CreateBatchAllowanceDto, callerTenantId?: string): Promise<{
+        message: string;
+        count: number;
+        created: number;
+        updated: number;
+    }>;
     update(id: string, tenantId: string | undefined, dto: UpdateAllowanceDto): Promise<MonthlyAllowance>;
     incrementConsumed(userId: string, year: number, month: number): Promise<MonthlyAllowance>;
 }
