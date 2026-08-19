@@ -12,6 +12,7 @@ import { MealTypesModule } from './meal-types/meal-types.module';
 import { MealConsumptionsModule } from './meal-consumptions/meal-consumptions.module';
 import { MonthlyAllowancesModule } from './monthly-allowances/monthly-allowances.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { TelegramModule } from './telegram/telegram.module';
 
 import { Tenant } from './tenants/tenant.entity';
 import { User } from './users/user.entity';
@@ -49,6 +50,7 @@ import { MealConsumption } from './meal-consumptions/meal-consumption.entity';
     MealConsumptionsModule,
     MonthlyAllowancesModule,
     DashboardModule,
+    TelegramModule,
   ],
   controllers: [AppController],
   providers: [AppService],

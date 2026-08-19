@@ -20,6 +20,7 @@ const meal_types_module_1 = require("./meal-types/meal-types.module");
 const meal_consumptions_module_1 = require("./meal-consumptions/meal-consumptions.module");
 const monthly_allowances_module_1 = require("./monthly-allowances/monthly-allowances.module");
 const dashboard_module_1 = require("./dashboard/dashboard.module");
+const telegram_module_1 = require("./telegram/telegram.module");
 const tenant_entity_1 = require("./tenants/tenant.entity");
 const user_entity_1 = require("./users/user.entity");
 const restaurant_entity_1 = require("./restaurants/restaurant.entity");
@@ -59,6 +60,7 @@ exports.AppModule = AppModule = __decorate([
             meal_consumptions_module_1.MealConsumptionsModule,
             monthly_allowances_module_1.MonthlyAllowancesModule,
             dashboard_module_1.DashboardModule,
+            telegram_module_1.TelegramModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

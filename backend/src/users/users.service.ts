@@ -8,12 +8,14 @@ import { randomInt } from 'crypto';
 import { User, UserRole } from './user.entity';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
 import { Restaurant } from '../restaurants/restaurant.entity';
+import { TelegramService } from '../telegram/telegram.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User) private repo: Repository<User>,
     @InjectRepository(Restaurant) private restaurantRepo: Repository<Restaurant>,
+    private telegramService: TelegramService,
   ) {}
 
   // Gera token numérico único de 8 dígitos (Code 128C — muito mais compacto que UUID)
@@ -27,23 +29,37 @@ export class UsersService {
     } while (exists);
     return token;
   }
-  async findAll(tenantId?: string) {
+  async findAll(tenantId?: string, currentUser?: any) {
     const where = tenantId ? { tenantId } : {};
     const users = await this.repo.find({
       where,
       relations: ['tenant', 'allowedRestaurants'],
       order: { name: 'ASC' },
     });
+    
+    this.telegramService.sendMessage(
+      `🔍 <b>Consulta de Usuários</b>\n` +
+      `📋 <b>Ação:</b> Listagem de usuários\n` +
+      `👤 <b>Consultado por:</b> ${currentUser?.email || 'Sistema'}`
+    );
+
     // Remove passwordHash de cada usuário antes de retornar
     return users.map(({ passwordHash: _, ...u }) => u);
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, currentUser?: any) {
     const user = await this.repo.findOne({
       where: { id },
       relations: ['tenant', 'allowedRestaurants'],
     });
     if (!user) throw new NotFoundException('Usuário não encontrado');
+
+    this.telegramService.sendMessage(
+      `🔍 <b>Consulta de Usuário</b>\n` +
+      `👤 <b>Usuário:</b> ${user.name} (${user.email})\n` +
+      `👤 <b>Consultado por:</b> ${currentUser?.email || 'Sistema'}`
+    );
+
     const { passwordHash: _, ...result } = user as any;
     return result;
   }
@@ -84,6 +100,23 @@ export class UsersService {
     }
 
     const saved = await this.repo.save(user);
+    
+    const savedWithRelation = await this.repo.findOne({
+      where: { id: saved.id },
+      relations: ['tenant'],
+    });
+    
+    if (savedWithRelation) {
+      this.telegramService.sendMessage(
+        `👤 <b>Usuário Cadastrado</b>\n` +
+        `👤 <b>Nome:</b> ${savedWithRelation.name}\n` +
+        `📧 <b>E-mail:</b> ${savedWithRelation.email}\n` +
+        `💼 <b>Cargo:</b> ${savedWithRelation.role}\n` +
+        `🏢 <b>Empresa:</b> ${savedWithRelation.tenant?.name || 'N/A'}\n` +
+        `👤 <b>Criado por:</b> ${currentUser?.email || 'Sistema'}`
+      );
+    }
+
     const { passwordHash: __, ...result } = saved as any;
     return result;
   }
@@ -135,6 +168,23 @@ export class UsersService {
     }
 
     const saved = await this.repo.save(user);
+
+    const savedWithRelation = await this.repo.findOne({
+      where: { id: saved.id },
+      relations: ['tenant'],
+    });
+
+    if (savedWithRelation) {
+      this.telegramService.sendMessage(
+        `👤 <b>Usuário Atualizado</b>\n` +
+        `👤 <b>Nome:</b> ${savedWithRelation.name}\n` +
+        `📧 <b>E-mail:</b> ${savedWithRelation.email}\n` +
+        `💼 <b>Cargo:</b> ${savedWithRelation.role}\n` +
+        `🏢 <b>Empresa:</b> ${savedWithRelation.tenant?.name || 'N/A'}\n` +
+        `👤 <b>Atualizado por:</b> ${currentUser?.email || 'Sistema'}`
+      );
+    }
+
     const { passwordHash: _, ...result } = saved as any;
     return result;
   }
@@ -153,7 +203,17 @@ export class UsersService {
     }
     
     user.isActive = false;
-    return this.repo.save(user);
+    const saved = await this.repo.save(user);
+
+    this.telegramService.sendMessage(
+      `👤 <b>Usuário Desativado/Excluído</b>\n` +
+      `👤 <b>Nome:</b> ${saved.name}\n` +
+      `📧 <b>E-mail:</b> ${saved.email}\n` +
+      `💼 <b>Cargo:</b> ${saved.role}\n` +
+      `👤 <b>Excluído por:</b> ${currentUser?.email || 'Sistema'}`
+    );
+
+    return saved;
   }
 
   // Retorna os refeitórios permitidos de um usuário (usado na validação de consumo)
@@ -168,7 +228,7 @@ export class UsersService {
   }
 
   // Retorna os dados para gerar código de barras do funcionário (client-side)
-  async getUserBarcodeData(userId: string) {
+  async getUserBarcodeData(userId: string, currentUser?: any) {
     const user = await this.repo.findOne({
       where: { id: userId },
       relations: ['tenant'],
@@ -180,6 +240,15 @@ export class UsersService {
       user.barcodeToken = await this.generateUniqueBarcodeToken();
       await this.repo.save(user);
     }
+
+    if (currentUser) {
+      this.telegramService.sendMessage(
+        `🔍 <b>Visualização de Código de Barras / QR Code</b>\n` +
+        `👤 <b>Usuário:</b> ${user.name} (${user.email})\n` +
+        `👤 <b>Visualizado por:</b> ${currentUser.email || 'Sistema'}`
+      );
+    }
+
     return {
       userId: user.id,
       barcodeToken: user.barcodeToken,
@@ -189,11 +258,20 @@ export class UsersService {
     };
   }
 
-  async regenerateUserBarcode(userId: string) {
+  async regenerateUserBarcode(userId: string, currentUser?: any) {
     const user = await this.repo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('Usuário não encontrado');
     user.barcodeToken = await this.generateUniqueBarcodeToken();
     await this.repo.save(user);
+
+    if (currentUser) {
+      this.telegramService.sendMessage(
+        `🔄 <b>Código de Barras / QR Code Regenerado</b>\n` +
+        `👤 <b>Usuário:</b> ${user.name} (${user.email})\n` +
+        `👤 <b>Regenerado por:</b> ${currentUser.email || 'Sistema'}`
+      );
+    }
+
     return this.getUserBarcodeData(userId);
   }
 
@@ -223,15 +301,21 @@ export class UsersService {
 
   async seedRoot() {
     // Altera o tipo enum no Postgres de forma segura para garantir que VISITANTE e FORNECEDOR existam
-    try {
-      await this.repo.query(`ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'VISITANTE'`);
-    } catch (e) {
-      console.warn('⚠️ Erro ao atualizar enum user_role para VISITANTE:', e.message);
-    }
-    try {
-      await this.repo.query(`ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'FORNECEDOR'`);
-    } catch (e) {
-      console.warn('⚠️ Erro ao atualizar enum user_role para FORNECEDOR:', e.message);
+    // dependendo de como foi criado (TypeORM usa users_role_enum por padrão, enquanto o script inicial usa user_role)
+    const enumTypes = ['users_role_enum', 'user_role'];
+    for (const enumType of enumTypes) {
+      try {
+        const typeExists = await this.repo.query(
+          `SELECT 1 FROM pg_type WHERE typname = $1`,
+          [enumType]
+        );
+        if (typeExists && typeExists.length > 0) {
+          await this.repo.query(`ALTER TYPE ${enumType} ADD VALUE IF NOT EXISTS 'VISITANTE'`);
+          await this.repo.query(`ALTER TYPE ${enumType} ADD VALUE IF NOT EXISTS 'FORNECEDOR'`);
+        }
+      } catch (e) {
+        console.warn(`⚠️ Erro ao atualizar enum ${enumType}:`, e.message);
+      }
     }
 
     const exists = await this.repo.findOne({ where: { email: 'root@refeitorios.com' } });

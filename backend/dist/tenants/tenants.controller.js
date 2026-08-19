@@ -24,36 +24,39 @@ let TenantsController = class TenantsController {
     constructor(service) {
         this.service = service;
     }
-    findAll() { return this.service.findAll(); }
-    findOne(id) { return this.service.findOne(id); }
-    create(dto) { return this.service.create(dto); }
-    update(id, dto) {
-        return this.service.update(id, dto);
+    findAll(req) { return this.service.findAll(req.user); }
+    findOne(id, req) { return this.service.findOne(id, req.user); }
+    create(dto, req) { return this.service.create(dto, req.user); }
+    update(id, dto, req) {
+        return this.service.update(id, dto, req.user);
     }
-    remove(id) { return this.service.remove(id); }
+    remove(id, req) { return this.service.remove(id, req.user); }
 };
 exports.TenantsController = TenantsController;
 __decorate([
     (0, common_1.Get)(),
     (0, roles_guard_1.Roles)(user_entity_1.UserRole.ROOT),
+    __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], TenantsController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
     (0, roles_guard_1.Roles)(user_entity_1.UserRole.ROOT),
     __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], TenantsController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Post)(),
     (0, roles_guard_1.Roles)(user_entity_1.UserRole.ROOT),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [tenant_dto_1.CreateTenantDto]),
+    __metadata("design:paramtypes", [tenant_dto_1.CreateTenantDto, Object]),
     __metadata("design:returntype", void 0)
 ], TenantsController.prototype, "create", null);
 __decorate([
@@ -61,16 +64,18 @@ __decorate([
     (0, roles_guard_1.Roles)(user_entity_1.UserRole.ROOT),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, tenant_dto_1.UpdateTenantDto]),
+    __metadata("design:paramtypes", [String, tenant_dto_1.UpdateTenantDto, Object]),
     __metadata("design:returntype", void 0)
 ], TenantsController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
     (0, roles_guard_1.Roles)(user_entity_1.UserRole.ROOT),
     __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], TenantsController.prototype, "remove", null);
 exports.TenantsController = TenantsController = __decorate([

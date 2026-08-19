@@ -42,7 +42,7 @@ let MealConsumptionsController = class MealConsumptionsController {
         return this.service.registerByBarcodeToken(req.user.id, req.user.tenantId, dto.barcodeToken, dto.notes);
     }
     queryBalance(dto, req) {
-        return this.service.queryBalanceByBarcodeToken(req.user.tenantId, dto.barcodeToken);
+        return this.service.queryBalanceByBarcodeToken(req.user.tenantId, dto.barcodeToken, req.user);
     }
     register(dto, req) {
         return this.service.register(req.user.id, req.user.tenantId, dto);

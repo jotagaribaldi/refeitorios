@@ -30,15 +30,15 @@ let MonthlyAllowancesController = class MonthlyAllowancesController {
     }
     create(dto, req) {
         const tenantId = req.user.role === user_entity_1.UserRole.ROOT ? undefined : req.user.tenantId;
-        return this.service.create(dto, tenantId);
+        return this.service.create(dto, tenantId, req.user);
     }
     createBatch(dto, req) {
         const tenantId = req.user.role === user_entity_1.UserRole.ROOT ? dto.tenantId : req.user.tenantId;
-        return this.service.createBatch(dto, tenantId);
+        return this.service.createBatch(dto, tenantId, req.user);
     }
     update(id, dto, req) {
         const tenantId = req.user.role === user_entity_1.UserRole.ROOT ? undefined : req.user.tenantId;
-        return this.service.update(id, tenantId, dto);
+        return this.service.update(id, tenantId, dto, req.user);
     }
 };
 exports.MonthlyAllowancesController = MonthlyAllowancesController;

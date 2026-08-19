@@ -17,42 +17,71 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const tenant_entity_1 = require("./tenant.entity");
+const telegram_service_1 = require("../telegram/telegram.service");
 let TenantsService = class TenantsService {
     repo;
-    constructor(repo) {
+    telegramService;
+    constructor(repo, telegramService) {
         this.repo = repo;
+        this.telegramService = telegramService;
     }
-    async findAll() {
+    async findAll(currentUser) {
+        this.telegramService.sendMessage(`🔍 <b>Consulta de Empresas</b>\n` +
+            `📋 <b>Ação:</b> Listagem de todas as empresas\n` +
+            `👤 <b>Consultado por:</b> ${currentUser?.email || 'Sistema'}`);
         return this.repo.find({ order: { name: 'ASC' } });
     }
-    async findOne(id) {
+    async findOne(id, currentUser) {
         const tenant = await this.repo.findOne({ where: { id } });
         if (!tenant)
             throw new common_1.NotFoundException('Empresa não encontrada');
+        this.telegramService.sendMessage(`🔍 <b>Consulta de Empresa</b>\n` +
+            `🏢 <b>Empresa:</b> ${tenant.name}\n` +
+            `👤 <b>Consultado por:</b> ${currentUser?.email || 'Sistema'}`);
         return tenant;
     }
-    async create(dto) {
+    async create(dto, currentUser) {
         const exists = await this.repo.findOne({ where: { email: dto.email } });
         if (exists)
             throw new common_1.ConflictException('Email já cadastrado');
         const tenant = this.repo.create(dto);
-        return this.repo.save(tenant);
+        const saved = await this.repo.save(tenant);
+        this.telegramService.sendMessage(`🏢 <b>Empresa Cadastrada</b>\n` +
+            `🏢 <b>Nome:</b> ${saved.name}\n` +
+            `📧 <b>E-mail:</b> ${saved.email}\n` +
+            `👤 <b>Criado por:</b> ${currentUser?.email || 'Sistema'}`);
+        return saved;
     }
-    async update(id, dto) {
-        const tenant = await this.findOne(id);
+    async update(id, dto, currentUser) {
+        const tenant = await this.repo.findOne({ where: { id } });
+        if (!tenant)
+            throw new common_1.NotFoundException('Empresa não encontrada');
         Object.assign(tenant, dto);
-        return this.repo.save(tenant);
+        const saved = await this.repo.save(tenant);
+        this.telegramService.sendMessage(`🏢 <b>Empresa Atualizada</b>\n` +
+            `🏢 <b>Nome:</b> ${saved.name}\n` +
+            `📧 <b>E-mail:</b> ${saved.email}\n` +
+            `👤 <b>Atualizado por:</b> ${currentUser?.email || 'Sistema'}`);
+        return saved;
     }
-    async remove(id) {
-        const tenant = await this.findOne(id);
+    async remove(id, currentUser) {
+        const tenant = await this.repo.findOne({ where: { id } });
+        if (!tenant)
+            throw new common_1.NotFoundException('Empresa não encontrada');
         tenant.isActive = false;
-        return this.repo.save(tenant);
+        const saved = await this.repo.save(tenant);
+        this.telegramService.sendMessage(`🏢 <b>Empresa Desativada/Excluída</b>\n` +
+            `🏢 <b>Nome:</b> ${saved.name}\n` +
+            `📧 <b>E-mail:</b> ${saved.email}\n` +
+            `👤 <b>Excluído por:</b> ${currentUser?.email || 'Sistema'}`);
+        return saved;
     }
 };
 exports.TenantsService = TenantsService;
 exports.TenantsService = TenantsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(tenant_entity_1.Tenant)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        telegram_service_1.TelegramService])
 ], TenantsService);
 //# sourceMappingURL=tenants.service.js.map

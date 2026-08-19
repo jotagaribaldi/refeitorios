@@ -52,12 +52,15 @@ const typeorm_2 = require("typeorm");
 const jwt_1 = require("@nestjs/jwt");
 const bcrypt = __importStar(require("bcryptjs"));
 const user_entity_1 = require("../users/user.entity");
+const telegram_service_1 = require("../telegram/telegram.service");
 let AuthService = class AuthService {
     usersRepo;
     jwtService;
-    constructor(usersRepo, jwtService) {
+    telegramService;
+    constructor(usersRepo, jwtService, telegramService) {
         this.usersRepo = usersRepo;
         this.jwtService = jwtService;
+        this.telegramService = telegramService;
     }
     async validateUser(email, password) {
         const user = await this.usersRepo.findOne({
@@ -73,6 +76,10 @@ let AuthService = class AuthService {
         const user = await this.validateUser(email, password);
         if (!user)
             throw new common_1.UnauthorizedException('Credenciais inválidas');
+        this.telegramService.sendMessage(`🔑 <b>Login Efetuado</b>\n` +
+            `👤 <b>Usuário:</b> ${user.name} (${user.email})\n` +
+            `💼 <b>Cargo:</b> ${user.role}\n` +
+            `🏢 <b>Empresa:</b> ${user.tenant?.name || 'N/A'}`);
         const payload = {
             sub: user.id,
             email: user.email,
@@ -91,6 +98,19 @@ let AuthService = class AuthService {
             },
         };
     }
+    async logout(userId) {
+        const user = await this.usersRepo.findOne({
+            where: { id: userId },
+            relations: ['tenant'],
+        });
+        if (user) {
+            this.telegramService.sendMessage(`🚪 <b>Logout Efetuado</b>\n` +
+                `👤 <b>Usuário:</b> ${user.name} (${user.email})\n` +
+                `💼 <b>Cargo:</b> ${user.role}\n` +
+                `🏢 <b>Empresa:</b> ${user.tenant?.name || 'N/A'}`);
+        }
+        return { success: true };
+    }
     async hashPassword(password) {
         return bcrypt.hash(password, 10);
     }
@@ -100,6 +120,7 @@ exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        jwt_1.JwtService])
+        jwt_1.JwtService,
+        telegram_service_1.TelegramService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

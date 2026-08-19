@@ -17,12 +17,12 @@ export class UsersController {
   @Roles(UserRole.ROOT, UserRole.GERENTE)
   findAll(@Request() req: any, @Query('tenantId') tenantId?: string) {
     const tid = req.user.role === UserRole.GERENTE ? req.user.tenantId : tenantId;
-    return this.service.findAll(tid);
+    return this.service.findAll(tid, req.user);
   }
 
   @Get(':id')
   @Roles(UserRole.ROOT, UserRole.GERENTE)
-  findOne(@Param('id') id: string) { return this.service.findOne(id); }
+  findOne(@Param('id') id: string, @Request() req: any) { return this.service.findOne(id, req.user); }
 
   // Retorna os dados do código de barras do funcionário
   // Acessível pelo próprio usuário, FISCAL e GERENTE do mesmo tenant
@@ -35,7 +35,7 @@ export class UsersController {
         throw new ForbiddenException('Acesso negado');
       }
     }
-    return this.service.getUserBarcodeData(id);
+    return this.service.getUserBarcodeData(id, req.user);
   }
 
   // Alias de retrocompatibilidade com mobile
@@ -48,7 +48,7 @@ export class UsersController {
         throw new ForbiddenException('Acesso negado');
       }
     }
-    return this.service.getUserBarcodeData(id);
+    return this.service.getUserBarcodeData(id, req.user);
   }
 
   @Post(':id/regenerate-barcode')
@@ -61,7 +61,7 @@ export class UsersController {
         throw new ForbiddenException('Acesso negado');
       }
     }
-    return this.service.regenerateUserBarcode(id);
+    return this.service.regenerateUserBarcode(id, req.user);
   }
 
   // Alias de retrocompatibilidade
@@ -75,7 +75,7 @@ export class UsersController {
         throw new ForbiddenException('Acesso negado');
       }
     }
-    return this.service.regenerateUserBarcode(id);
+    return this.service.regenerateUserBarcode(id, req.user);
   }
 
   @Post()

@@ -20,7 +20,7 @@ export declare class UsersController {
         consumptions: import("../meal-consumptions/meal-consumption.entity").MealConsumption[];
         allowedRestaurants: import("../restaurants/restaurant.entity").Restaurant[];
     }[]>;
-    findOne(id: string): Promise<any>;
+    findOne(id: string, req: any): Promise<any>;
     getUserBarcode(id: string, req: any): Promise<{
         userId: string;
         barcodeToken: string;

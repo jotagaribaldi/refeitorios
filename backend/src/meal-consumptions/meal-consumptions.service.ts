@@ -9,6 +9,8 @@ import { MealTypesService } from '../meal-types/meal-types.service';
 import { MonthlyAllowancesService } from '../monthly-allowances/monthly-allowances.service';
 import { UsersService } from '../users/users.service';
 import { RegisterConsumptionDto } from './meal-consumption.dto';
+import { TelegramService } from '../telegram/telegram.service';
+import { Tenant } from '../tenants/tenant.entity';
 
 @Injectable()
 export class MealConsumptionsService {
@@ -18,6 +20,7 @@ export class MealConsumptionsService {
     private mealTypesService: MealTypesService,
     private allowancesService: MonthlyAllowancesService,
     private usersService: UsersService,
+    private telegramService: TelegramService,
   ) {}
 
   // ─── REGISTRO DE CONSUMO (fluxo principal) ───────────────────────────
@@ -80,11 +83,28 @@ export class MealConsumptionsService {
     });
 
     const saved = await this.repo.save(consumption);
-    // Retorna com relações para o app mobile montar a resposta
-    return this.repo.findOne({
+    
+    const fullC = await this.repo.findOne({
       where: { id: saved.id },
-      relations: ['restaurant', 'mealType', 'user'],
+      relations: ['restaurant', 'mealType', 'user', 'user.tenant'],
     });
+
+    if (fullC) {
+      const nowPeriod = new Date();
+      const allowance = await this.allowancesService.findForUser(userId, nowPeriod.getFullYear(), nowPeriod.getMonth() + 1);
+      const remaining = allowance ? (allowance.totalAllowance - allowance.consumed) : 'N/A';
+
+      this.telegramService.sendMessage(
+        `🍽️ <b>Refeição Consumida (Auto-Registro)</b>\n` +
+        `👤 <b>Funcionário:</b> ${fullC.user?.name || 'N/A'}\n` +
+        `🏢 <b>Empresa:</b> ${fullC.user?.tenant?.name || 'N/A'}\n` +
+        `🍽️ <b>Tipo:</b> ${fullC.mealType?.name || 'N/A'}\n` +
+        `🏠 <b>Refeitório:</b> ${fullC.restaurant?.name || 'N/A'}\n` +
+        `💳 <b>Saldo Restante:</b> ${remaining} refeições`
+      );
+    }
+
+    return fullC;
   }
 
   // ─── REGISTRO VIA SCAN DE CÓDIGO DE BARRAS (fluxo principal do fiscal) ───
@@ -168,8 +188,21 @@ export class MealConsumptionsService {
     const saved = await this.repo.save(consumption);
     const result = await this.repo.findOne({
       where: { id: saved.id },
-      relations: ['restaurant', 'mealType', 'user'],
+      relations: ['restaurant', 'mealType', 'user', 'user.tenant'],
     });
+
+    const fiscal = await this.usersService.findOne(fiscalId);
+    const remaining = allowance ? (allowance.totalAllowance - allowance.consumed) : 'N/A';
+
+    this.telegramService.sendMessage(
+      `🍽️ <b>Refeição Consumida (Registrado por Fiscal)</b>\n` +
+      `👤 <b>Funcionário:</b> ${result?.user?.name || targetUser.name}\n` +
+      `🏢 <b>Empresa:</b> ${result?.user?.tenant?.name || 'N/A'}\n` +
+      `🍽️ <b>Tipo:</b> ${result?.mealType?.name || 'N/A'}\n` +
+      `🏠 <b>Refeitório:</b> ${result?.restaurant?.name || 'N/A'}\n` +
+      `💳 <b>Saldo Restante:</b> ${remaining} refeições\n` +
+      `👤 <b>Fiscal:</b> ${fiscal?.name || 'N/A'}`
+    );
 
     return {
       ...result,
@@ -188,7 +221,7 @@ export class MealConsumptionsService {
   }
 
   // ─── CONSULTA DE SALDO (sem registrar consumo) ───────────────────────
-  async queryBalanceByBarcodeToken(fiscalTenantId: string, barcodeToken: string) {
+  async queryBalanceByBarcodeToken(fiscalTenantId: string, barcodeToken: string, currentUser?: any) {
     // 1. Resolve o funcionário pelo token
     const targetUser = await this.usersService.findByBarcodeToken(barcodeToken);
     if (!targetUser) throw new BadRequestException('Código de barras inválido ou funcionário não encontrado');
@@ -211,6 +244,22 @@ export class MealConsumptionsService {
     });
     // Filtra apenas o mês corrente
     const monthConsumptions = consumptions.filter((c) => c.date >= startDate && c.date <= endDate);
+
+    let tenantName = 'N/A';
+    if (targetUser.tenantId) {
+      const tenant = await this.repo.manager.findOne(Tenant, { where: { id: targetUser.tenantId } });
+      if (tenant) tenantName = tenant.name;
+    }
+
+    if (currentUser) {
+      this.telegramService.sendMessage(
+        `🔍 <b>Consulta de Saldo (Sem Consumo)</b>\n` +
+        `👤 <b>Funcionário:</b> ${targetUser.name} (${targetUser.employeeCode || 'Sem Matrícula'})\n` +
+        `🏢 <b>Empresa:</b> ${tenantName}\n` +
+        `💳 <b>Saldo Restante:</b> ${allowance ? (allowance.totalAllowance - allowance.consumed) : 'N/A'} refeições\n` +
+        `👤 <b>Consultado por:</b> ${currentUser.name || currentUser.email} (${currentUser.role})`
+      );
+    }
 
     return {
       employee: {

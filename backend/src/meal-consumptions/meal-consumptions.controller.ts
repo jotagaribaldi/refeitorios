@@ -35,7 +35,7 @@ export class MealConsumptionsController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.FISCAL, UserRole.GERENTE)
   queryBalance(@Body() dto: ScanBarcodeDto, @Request() req: any) {
-    return this.service.queryBalanceByBarcodeToken(req.user.tenantId, dto.barcodeToken);
+    return this.service.queryBalanceByBarcodeToken(req.user.tenantId, dto.barcodeToken, req.user);
   }
 
 

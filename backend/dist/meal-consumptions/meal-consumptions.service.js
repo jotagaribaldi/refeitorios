@@ -21,18 +21,22 @@ const restaurants_service_1 = require("../restaurants/restaurants.service");
 const meal_types_service_1 = require("../meal-types/meal-types.service");
 const monthly_allowances_service_1 = require("../monthly-allowances/monthly-allowances.service");
 const users_service_1 = require("../users/users.service");
+const telegram_service_1 = require("../telegram/telegram.service");
+const tenant_entity_1 = require("../tenants/tenant.entity");
 let MealConsumptionsService = class MealConsumptionsService {
     repo;
     restaurantsService;
     mealTypesService;
     allowancesService;
     usersService;
-    constructor(repo, restaurantsService, mealTypesService, allowancesService, usersService) {
+    telegramService;
+    constructor(repo, restaurantsService, mealTypesService, allowancesService, usersService, telegramService) {
         this.repo = repo;
         this.restaurantsService = restaurantsService;
         this.mealTypesService = mealTypesService;
         this.allowancesService = allowancesService;
         this.usersService = usersService;
+        this.telegramService = telegramService;
     }
     async register(userId, tenantId, dto) {
         const user = await this.usersService.findByBarcodeToken(dto.qrCodeToken);
@@ -80,10 +84,22 @@ let MealConsumptionsService = class MealConsumptionsService {
             notes: dto.notes,
         });
         const saved = await this.repo.save(consumption);
-        return this.repo.findOne({
+        const fullC = await this.repo.findOne({
             where: { id: saved.id },
-            relations: ['restaurant', 'mealType', 'user'],
+            relations: ['restaurant', 'mealType', 'user', 'user.tenant'],
         });
+        if (fullC) {
+            const nowPeriod = new Date();
+            const allowance = await this.allowancesService.findForUser(userId, nowPeriod.getFullYear(), nowPeriod.getMonth() + 1);
+            const remaining = allowance ? (allowance.totalAllowance - allowance.consumed) : 'N/A';
+            this.telegramService.sendMessage(`🍽️ <b>Refeição Consumida (Auto-Registro)</b>\n` +
+                `👤 <b>Funcionário:</b> ${fullC.user?.name || 'N/A'}\n` +
+                `🏢 <b>Empresa:</b> ${fullC.user?.tenant?.name || 'N/A'}\n` +
+                `🍽️ <b>Tipo:</b> ${fullC.mealType?.name || 'N/A'}\n` +
+                `🏠 <b>Refeitório:</b> ${fullC.restaurant?.name || 'N/A'}\n` +
+                `💳 <b>Saldo Restante:</b> ${remaining} refeições`);
+        }
+        return fullC;
     }
     async registerByBarcodeToken(fiscalId, fiscalTenantId, barcodeToken, notes) {
         const targetUser = await this.usersService.findByBarcodeToken(barcodeToken);
@@ -141,8 +157,17 @@ let MealConsumptionsService = class MealConsumptionsService {
         const saved = await this.repo.save(consumption);
         const result = await this.repo.findOne({
             where: { id: saved.id },
-            relations: ['restaurant', 'mealType', 'user'],
+            relations: ['restaurant', 'mealType', 'user', 'user.tenant'],
         });
+        const fiscal = await this.usersService.findOne(fiscalId);
+        const remaining = allowance ? (allowance.totalAllowance - allowance.consumed) : 'N/A';
+        this.telegramService.sendMessage(`🍽️ <b>Refeição Consumida (Registrado por Fiscal)</b>\n` +
+            `👤 <b>Funcionário:</b> ${result?.user?.name || targetUser.name}\n` +
+            `🏢 <b>Empresa:</b> ${result?.user?.tenant?.name || 'N/A'}\n` +
+            `🍽️ <b>Tipo:</b> ${result?.mealType?.name || 'N/A'}\n` +
+            `🏠 <b>Refeitório:</b> ${result?.restaurant?.name || 'N/A'}\n` +
+            `💳 <b>Saldo Restante:</b> ${remaining} refeições\n` +
+            `👤 <b>Fiscal:</b> ${fiscal?.name || 'N/A'}`);
         return {
             ...result,
             employee: {
@@ -158,7 +183,7 @@ let MealConsumptionsService = class MealConsumptionsService {
             authorized: true,
         };
     }
-    async queryBalanceByBarcodeToken(fiscalTenantId, barcodeToken) {
+    async queryBalanceByBarcodeToken(fiscalTenantId, barcodeToken, currentUser) {
         const targetUser = await this.usersService.findByBarcodeToken(barcodeToken);
         if (!targetUser)
             throw new common_1.BadRequestException('Código de barras inválido ou funcionário não encontrado');
@@ -178,6 +203,19 @@ let MealConsumptionsService = class MealConsumptionsService {
             order: { consumedAt: 'DESC' },
         });
         const monthConsumptions = consumptions.filter((c) => c.date >= startDate && c.date <= endDate);
+        let tenantName = 'N/A';
+        if (targetUser.tenantId) {
+            const tenant = await this.repo.manager.findOne(tenant_entity_1.Tenant, { where: { id: targetUser.tenantId } });
+            if (tenant)
+                tenantName = tenant.name;
+        }
+        if (currentUser) {
+            this.telegramService.sendMessage(`🔍 <b>Consulta de Saldo (Sem Consumo)</b>\n` +
+                `👤 <b>Funcionário:</b> ${targetUser.name} (${targetUser.employeeCode || 'Sem Matrícula'})\n` +
+                `🏢 <b>Empresa:</b> ${tenantName}\n` +
+                `💳 <b>Saldo Restante:</b> ${allowance ? (allowance.totalAllowance - allowance.consumed) : 'N/A'} refeições\n` +
+                `👤 <b>Consultado por:</b> ${currentUser.name || currentUser.email} (${currentUser.role})`);
+        }
         return {
             employee: {
                 id: targetUser.id,
@@ -233,6 +271,7 @@ exports.MealConsumptionsService = MealConsumptionsService = __decorate([
         restaurants_service_1.RestaurantsService,
         meal_types_service_1.MealTypesService,
         monthly_allowances_service_1.MonthlyAllowancesService,
-        users_service_1.UsersService])
+        users_service_1.UsersService,
+        telegram_service_1.TelegramService])
 ], MealConsumptionsService);
 //# sourceMappingURL=meal-consumptions.service.js.map

@@ -5,13 +5,16 @@ import { MealTypesService } from '../meal-types/meal-types.service';
 import { MonthlyAllowancesService } from '../monthly-allowances/monthly-allowances.service';
 import { UsersService } from '../users/users.service';
 import { RegisterConsumptionDto } from './meal-consumption.dto';
+import { TelegramService } from '../telegram/telegram.service';
+import { Tenant } from '../tenants/tenant.entity';
 export declare class MealConsumptionsService {
     private repo;
     private restaurantsService;
     private mealTypesService;
     private allowancesService;
     private usersService;
-    constructor(repo: Repository<MealConsumption>, restaurantsService: RestaurantsService, mealTypesService: MealTypesService, allowancesService: MonthlyAllowancesService, usersService: UsersService);
+    private telegramService;
+    constructor(repo: Repository<MealConsumption>, restaurantsService: RestaurantsService, mealTypesService: MealTypesService, allowancesService: MonthlyAllowancesService, usersService: UsersService, telegramService: TelegramService);
     register(userId: string, tenantId: string, dto: RegisterConsumptionDto): Promise<MealConsumption | null>;
     registerByBarcodeToken(fiscalId: string, fiscalTenantId: string, barcodeToken: string, notes?: string): Promise<{
         employee: {
@@ -27,7 +30,7 @@ export declare class MealConsumptionsService {
         authorized: boolean;
         id?: string | undefined;
         tenantId?: string | undefined;
-        tenant?: import("../tenants/tenant.entity").Tenant | undefined;
+        tenant?: Tenant | undefined;
         userId?: string | undefined;
         user?: import("../users/user.entity").User | undefined;
         restaurantId?: string | undefined;
@@ -53,7 +56,7 @@ export declare class MealConsumptionsService {
         authorized: boolean;
         id?: string | undefined;
         tenantId?: string | undefined;
-        tenant?: import("../tenants/tenant.entity").Tenant | undefined;
+        tenant?: Tenant | undefined;
         userId?: string | undefined;
         user?: import("../users/user.entity").User | undefined;
         restaurantId?: string | undefined;
@@ -65,7 +68,7 @@ export declare class MealConsumptionsService {
         notes?: string | undefined;
         createdAt?: Date | undefined;
     }>;
-    queryBalanceByBarcodeToken(fiscalTenantId: string, barcodeToken: string): Promise<{
+    queryBalanceByBarcodeToken(fiscalTenantId: string, barcodeToken: string, currentUser?: any): Promise<{
         employee: {
             id: string;
             name: string;

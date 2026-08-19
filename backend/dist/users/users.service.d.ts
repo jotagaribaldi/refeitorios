@@ -2,12 +2,14 @@ import { Repository } from 'typeorm';
 import { User, UserRole } from './user.entity';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
 import { Restaurant } from '../restaurants/restaurant.entity';
+import { TelegramService } from '../telegram/telegram.service';
 export declare class UsersService {
     private repo;
     private restaurantRepo;
-    constructor(repo: Repository<User>, restaurantRepo: Repository<Restaurant>);
+    private telegramService;
+    constructor(repo: Repository<User>, restaurantRepo: Repository<Restaurant>, telegramService: TelegramService);
     private generateUniqueBarcodeToken;
-    findAll(tenantId?: string): Promise<{
+    findAll(tenantId?: string, currentUser?: any): Promise<{
         id: string;
         tenantId: string;
         tenant: import("../tenants/tenant.entity").Tenant;
@@ -23,19 +25,19 @@ export declare class UsersService {
         consumptions: import("../meal-consumptions/meal-consumption.entity").MealConsumption[];
         allowedRestaurants: Restaurant[];
     }[]>;
-    findOne(id: string): Promise<any>;
+    findOne(id: string, currentUser?: any): Promise<any>;
     create(dto: CreateUserDto, currentUser: any): Promise<any>;
     update(id: string, dto: UpdateUserDto, currentUser: any): Promise<any>;
     remove(id: string, currentUser: any): Promise<User>;
     getAllowedRestaurantIds(userId: string): Promise<string[]>;
-    getUserBarcodeData(userId: string): Promise<{
+    getUserBarcodeData(userId: string, currentUser?: any): Promise<{
         userId: string;
         barcodeToken: string;
         userName: string;
         employeeCode: string;
         tenantName: string;
     }>;
-    regenerateUserBarcode(userId: string): Promise<{
+    regenerateUserBarcode(userId: string, currentUser?: any): Promise<{
         userId: string;
         barcodeToken: string;
         userName: string;

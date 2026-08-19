@@ -32,21 +32,21 @@ export class MonthlyAllowancesController {
   @Roles(UserRole.GERENTE, UserRole.ROOT)
   create(@Body() dto: CreateAllowanceDto, @Request() req: any) {
     const tenantId = req.user.role === UserRole.ROOT ? undefined : req.user.tenantId;
-    return this.service.create(dto, tenantId);
+    return this.service.create(dto, tenantId, req.user);
   }
 
   @Post('batch')
   @Roles(UserRole.GERENTE, UserRole.ROOT)
   createBatch(@Body() dto: CreateBatchAllowanceDto, @Request() req: any) {
     const tenantId = req.user.role === UserRole.ROOT ? dto.tenantId : req.user.tenantId;
-    return this.service.createBatch(dto, tenantId);
+    return this.service.createBatch(dto, tenantId, req.user);
   }
 
   @Put(':id')
   @Roles(UserRole.GERENTE, UserRole.ROOT)
   update(@Param('id') id: string, @Body() dto: UpdateAllowanceDto, @Request() req: any) {
     const tenantId = req.user.role === UserRole.ROOT ? undefined : req.user.tenantId;
-    return this.service.update(id, tenantId, dto);
+    return this.service.update(id, tenantId, dto, req.user);
   }
 }
 

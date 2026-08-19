@@ -17,5 +17,8 @@ export declare class AuthController {
             tenant: import("../tenants/tenant.entity").Tenant;
         };
     }>;
+    logout(req: any): Promise<{
+        success: boolean;
+    }>;
 }
 export {};
